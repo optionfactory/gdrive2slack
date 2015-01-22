@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html>
+  	<head>
+    	<title>Google Drive to Slack integration</title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="description" content="Frictionless integration between Google Drive and Slack">
+      <meta name="keywords" content="slack,google,drive,gdrive,integration">
+      <link rel="shortcut icon" href="/favicon.ico">
+      <link rel="apple-touch-icon" href="/favicon.png">
+    	<link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" rel="stylesheet">
+      <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+      <link href="styles.css" rel="stylesheet">
+      <link href="animate.min.css" rel="stylesheet">
+    </head>
+  	<body role="document">
+        <div style="display: none">
+                Make sure your team is on the same page. 
+                Get Slack notifications whenever new documents are created or when existing ones are shared with you, modified or deleted.
+        </div>
+      <div class="container container-md-height">
+        <div class="row row-md-height">
+          <div class="col-md-6 text-center main-column col-md-height">
+            <h1 class="main-title horizontal">Google Drive &#8594; Slack</h1>
+            <h1 class="main-title vertical">Google Drive<br>&#8595;<br>Slack</h1>
+            <p class="lead">Slack notifications whenever you work on Google Drive docs</p>
+
+            <div id="registration-panel" class="panel panel-default subscription" style="display: none">
+              <section id="registration-success" class="panel-body title" style="display: none">
+                <div>
+                  <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x text-success"></i><i id="symbol" class="fa fa-stack-1x fa-inverse fa-check"></i></span></div>
+                  <div>Success! Welcome <strong id="registration-user"></strong>, thanks for registering! From now on your Google Drive changeset stream will be published on your slack channel.</div>
+                </div>
+              </section>
+              <section id="registration-failure" class="panel-body title" style="display: none">
+                <div>
+                  <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x text-danger"></i><i id="symbol" class="fa fa-stack-1x fa-inverse fa-times"></i></span></div>
+                  <div>An error occurred, could not complete registration. Please <a id="retry" href="#">try again</a> later. Reason: <span id="registration-error"></span></div>
+                </div>
+              </section>
+              <section id="registration-progress" class="panel-body title" style="display: none">
+                <div>
+                  <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><i id="symbol" class="fa fa-stack-1x fa-inverse fa-refresh fa-spin"></i></span></div>
+                  <div>Registration in progress, please wait...</div>
+                </div>
+              </section>
+              <section id="registration-step" class="panel-body title disabled" style="display: none">
+                <div>
+                  <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><strong class="fa-stack-1x fa-inverse"><span>4</span><span class="divider">/</span><span class="total">3</span></strong></span></div>
+                  <div>Collect authorizations and complete subscription</div>
+                </div>
+              </section>
+            </div>
+
+            <div id="slack-channel-panel" class="panel panel-default subscription" style="display: none">
+              <section id="slack-channel-selected" class="panel-body title" style="display: none">
+                <div>
+                  <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x text-success"></i><i class="fa fa-stack-1x fa-inverse fa-check"></i></span></div>
+                  <div>Slack channel selected: <strong id="selected-channel"></strong></div>
+                </div>
+              </section>
+              <section id="slack-channel-form" class="panel-body title" style="display: none">
+                <div>
+                  <div class="symbol col-bottom"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><strong class="fa-stack-1x fa-inverse"><span>3</span><span class="divider">/</span><span class="total">3</span></strong></span></div>
+                  <div class="form-group"><label for="slack-channel">Slack channel</label><input type="text" class="form-control" id="slack-channel" placeholder="#channel or @user or leave empty for #general"></div>
+                  <div class="action col-bottom"><button id="action-select-channel" class="btn btn-primary push-right">Go</button></div>
+                </div>
+              </section>
+              <section id="slack-channel-step" class="panel-body title disabled" style="display: none">
+                <div>
+                  <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><strong class="fa-stack-1x fa-inverse"><span>3</span><span class="divider">/</span><span class="total">3</span></strong></span></div>
+                  <div>Select Slack <i>#channel</i> or <i>@user</i></div>
+                </div>
+              </section>
+            </div>
+
+            <div id="slack-auth-panel" class="panel panel-default subscription" style="display: none">
+              <section id="slack-auth-success" class="panel-body title" style="display: none">
+                <div>
+                  <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x text-success"></i><i class="fa fa-stack-1x fa-inverse fa-check"></i></span></div>
+                  <div>Access authorized for Slack domain</div>
+                </div>
+              </section>
+              <section id="slack-auth-request" class="panel-body title" style="display: none">
+                <div>
+                  <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><strong class="fa-stack-1x fa-inverse"><span>2</span><span class="divider">/</span><span class="total">3</span></strong></span></div>
+                  <div>Authorize access to Slack domain</div>
+                  <div class="action"><button id="action-auth-slack" class="btn btn-primary push-right">Go</button></div>
+                </div>
+              </section>
+              <section id="slack-auth-step" class="panel-body title disabled" style="display: none">
+                <div>
+                  <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><strong class="fa-stack-1x fa-inverse"><span>2</span><span class="divider">/</span><span class="total">3</span></strong></span></div>
+                  <div>Authorize access to Slack domain</div>
+                </div>
+              </section>
+            </div>
+
+            <div id="google-auth-panel" class="panel panel-default subscription">
+              <section id="google-auth-success" class="panel-body title" style="display: none">
+                <div>
+                  <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x text-success"></i><i class="fa fa-stack-1x fa-inverse fa-check"></i></span></div>
+                  <div>Access authorized for Google Drive changes stream</div>
+                </div>
+              </section>
+              <section id="google-auth-request" class="panel-body title" style="display: none">
+                <div>
+                  <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><strong class="fa-stack-1x fa-inverse"><span>1</span><span class="divider">/</span><span class="total">3</span></strong></span></div>
+                  <div>Authorize access to Google Drive changes stream</div>
+                  <div class="action"><button id="action-auth-google" class="btn btn-primary push-right">Go</button></div>
+                </div>
+              </section>
+            </div>
+            <section class="ads">
+              <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-2016883978955735" data-ad-slot="5471195803" data-ad-format="auto"></ins>
+            </section>
+          </div>
+          <div class="col-md-6 col-md-height faq">
+            <section>
+              <header class="title">
+                <div>
+                  <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><i class="fa fa-cogs fa-stack-1x fa-inverse"></i></span></div>
+                  <div>How does this service work?</div>
+                </div>
+              </header>
+              <p>Our service polls Google Drive change stream for your account and posts to your Slack channel every time a document is updated.</p>
+              <p>This is something more than what is available from other services, you will in fact receive notifications not only when <b>new</b> documents are created, but also when existing ones are <b>shared</b> with you, <b>modified</b> or <b>deleted</b>.</p>
+			        <p><b>Disclaimer:</b> this service is not created by, affiliated with, or supported by neither Slack Technologies, Inc. nor Google, Inc.</p>
+            </section>
+            <section>
+              <header class="title">
+                <div>
+                  <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><i class="fa fa-bell-o fa-stack-1x fa-inverse"></i></span></div>
+                  <div>How do I subscribe?</div>
+                </div>
+              </header>
+              <p>Subscribing to our service is easy, it takes just three steps:</p>
+              <ul>
+                <li>Authorize our service to access your Google Drive change stream</li>
+                <li>Authorize our service to send you messages on Slack</li>
+                <li>Choose a Slack <i>#channel</i>, <i>@user</i> or leave blank for <i>#general</i></li>
+              </ul>
+              <p>Just click "Go" on the first step to begin, our wizard will guide you through the complete process.</p>
+            </section>
+            <section>
+              <header class="title">
+                <div>
+                  <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><i class="fa fa-bullhorn fa-stack-1x fa-inverse"></i></span></div>
+                  <div>I want to know more!</div>
+                </div>
+              </header>
+              <p>Feel free to contact us anytime via email or twitter!</p>
+              <ul class="contacts">
+                <li><i class="fa fa-2x fa-envelope-o"></i><a href="mailto:gdrive2slack@optionfactory.net">gdrive2slack@optionfactory.net</a></li>
+                <li><i class="fa fa-2x fa-twitter"></i><a href="http://twitter.com/option_factory">@Option_factory</a></li>
+              </ul>
+            </section>
+            <section>
+              <header class="title">
+                <div>
+                  <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><i class="fa fa-key fa-stack-1x fa-inverse"></i></span></div>
+                  <div>Which permissions do you require?</div>
+                </div>
+              </header>
+              <p>We ask for the bare minimum permissions required to offer our service.</p>
+              <p>On Slack:</p>
+              <ul>
+                <li><b>post</b> to be able to send new messages to your slack domain</li>
+              </ul>
+              <p>On Google:</p>
+              <ul>
+                <li><b>email address and basic profile info</b> to discriminate between different users</li>
+                <li><b>metadata for files and documents in your Google Drive</b> to access Google Drive changes stream</li>
+              </ul>
+              <p>We <strong>do not</strong> require any kind of read/write permissions on your file contents.</p>
+            </section>
+            <section>
+              <header class="title">
+                <div>
+                  <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><i class="fa fa-legal fa-stack-1x fa-inverse"></i></span></div>
+                  <div>What will you do with my data?</div>
+                </div>
+              </header>
+              <p>Informations obtained by our service will be used only for service-related purposes (no data will be shared with third parties).</p>
+              <p>To provide you with the service, our system reads the following fields only from your changes stream:</p>
+              <div class="row infinite-list">
+                <div class="col-md-6">
+                  <ul>
+                    <li>largestChangeId</li>
+                    <li>items.deleted</li>
+                    <li>items.file.explicitlyTrashed</li>
+                    <li>items.file.alternateLink</li>
+                    <li>items.file.mimeType</li>
+                    <li>items.file.createdDate</li>
+                  </ul>
+                </div>
+                <div class="col-md-6">
+                  <ul>
+                    <li>items.file.modifiedDate</li>
+                    <li>items.file.sharedWithMeDate</li>
+                    <li>items.file.title</li>
+                    <li>items.file.lastModifyingUser.displayName</li>
+                    <li>items.file.lastModifyingUser.emailAddress</li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+            <section>
+              <header class="title">
+                <div>
+                  <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><i class="fa fa-bell-slash-o fa-stack-1x fa-inverse"></i></span></div>
+                  <div>How do I unsubscribe?</div>
+                </div>
+              </header>
+              <p>Just revoke authorizations for our application from your <a href="https://security.google.com/settings/security/permissions" target="_blank">Google account</a> and from your <a href="https://api.slack.com/tokens" target="_blank">Slack account</a>.</p>              
+            </section>
+            <footer>
+              <div class="us">One more option from the awesome folks at <a href="http://www.optionfactory.net"><strong class="logo-left">Option</strong><strong class="logo-right">Factory</strong></a>.</div>
+              <div class="copyright">OptionFactory S.r.l. - Corso Sempione 77, 20149 Milano. Capitale sociale i.v. 25.000€. P.IVA IT08721210964</div>
+              <div class="copyright">OptionFactory 2015. All rights reserved. <a href="policy.htm">Privacy &amp; cookies.</a></div>
+            </footer>
+          </div>
+        </div>
+      </div>
+
+  		<script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
+      <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+      <script type="text/javascript">
+        $.url_params = function(){
+            var url = location.href;
+            var result = {}
+            if(url.indexOf('?') >= 0){
+                var qs = url.substring(url.indexOf('?') + 1).split('&');
+                for(var i = 0; i < qs.length; i++){
+                    qs[i] = qs[i].split('=');
+                    result[qs[i][0]] = decodeURIComponent(qs[i][1]);
+                }   
+            }
+            return result;
+        }
+
+        function google_oauth(state){
+            document.location.href = "{{.Google.AuthUri}}"
+                + "?state=" + encodeURIComponent(state)
+                + "&scope=" + encodeURIComponent([
+                    "https://www.googleapis.com/auth/drive.metadata.readonly",
+                    "https://www.googleapis.com/auth/userinfo.email",
+                    "https://www.googleapis.com/auth/userinfo.profile"].join(" "))
+                + "&client_id=" + encodeURIComponent("{{.Google.ClientId}}")
+                + "&redirect_uri=" + encodeURIComponent("{{.Google.RedirectUri}}")
+                + "&access_type=offline"
+                + "&approval_prompt=force"
+                + "&response_type=code";
+        }
+        function slack_oauth(state){
+            document.location.href= "{{.Slack.AuthUri}}"
+                +"?state=" + encodeURIComponent(state)
+                +"&scope=identify,post"
+                +"&client_id=" + encodeURIComponent("{{.Slack.ClientId}}")
+                +"&redirect_uri=" + encodeURIComponent("{{.Slack.RedirectUri}}");
+        }          
+        function registration_success(state, user) {
+          document.location.href="/"
+            +"?state="+encodeURIComponent(state)
+            +"&user="+encodeURIComponent(user)
+        }
+        function registration_failure(state, error) {
+          document.location.href="/"
+            +"?state="+encodeURIComponent(state)
+            +"&error="+encodeURIComponent(error)
+        }
+        function animate_hide(component, animation, delay) {
+          setTimeout(function(){
+            $(component).addClass('animated ' + animation);
+            $(component).one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(){
+              $(component).hide();
+            });
+          }, delay);
+        }
+        function animate_show(component, animation) {
+          $(component).addClass('animated ' + animation);
+          $(component).show();
+        }
+      </script>      
+      <script type="text/javascript">
+        (function(){
+            var params=$.url_params();
+            var state = JSON.parse(params.state || "{}")
+
+            if (params.user) {
+              $('#google-auth-success').show();
+              $('#google-auth-panel').show();
+              $('#slack-auth-success').show();
+              $('#slack-auth-panel').show();
+              $('#selected-channel').html(state.c);
+              $('#slack-channel-selected').show();
+              $('#slack-channel-panel').show();
+              $('#registration-user').html(params.user);
+              $('#registration-success').show();
+              $('#registration-panel').show();
+
+              animate_hide('#google-auth-panel', 'fadeOut', 1000);
+              animate_hide('#slack-auth-panel', 'fadeOut', 1500);
+              animate_hide('#slack-channel-panel', 'fadeOut', 2000);
+              return;
+            }
+
+            if (params.error) {
+              $('#google-auth-success').show();
+              $('#google-auth-panel').show();
+              $('#slack-auth-success').show();
+              $('#slack-auth-panel').show();
+              $('#selected-channel').html(state.c);
+              $('#slack-channel-selected').show();
+              $('#slack-channel-panel').show();
+              $('#registration-error').html(params.error);
+              $('#registration-failure').show();
+              $('#registration-panel').show();
+
+              animate_hide('#google-auth-panel', 'fadeOut', 1000);
+              animate_hide('#slack-auth-panel', 'fadeOut', 1500);
+              animate_hide('#slack-channel-panel', 'fadeOut', 2000);
+              return;
+            }
+
+            if (params.code && state.g) {
+              // step 2 completed, slack authorization;
+              $('#google-auth-success').show();
+              $('#google-auth-panel').show();
+              $('#slack-auth-success').show();
+              $('#slack-auth-panel').show();
+              $('#slack-channel-form').show();
+              animate_show('#slack-channel-panel', 'bounceInDown');
+              $('#action-select-channel').click(function(){
+                var channel = $('#slack-channel').val() || "#general";
+                $('#selected-channel').html(channel);
+                $('#slack-channel-form').hide();
+                $('#slack-channel-selected').show();
+                $('#registration-progress').show();
+                animate_show('#registration-panel', 'bounceInDown');
+                var newState = JSON.stringify($.extend({}, state, { s: params.code, c: channel}));
+                $.ajax({
+                    url: '/',
+                    type: 'PUT',
+                    processData: false,
+                    contentType: 'application/json',
+                    data: newState
+                }).done(function(response){
+                    registration_success(newState, response.displayName);
+                }).fail(function(response){
+                    var error = response && response.responseJSON && response.responseJSON.error ? response.responseJSON.error : "unknown";
+                    registration_failure(newState, error);
+                });
+                return false;
+              });
+              return;
+            }
+
+            if (params.code && !state.g) {
+              // step 1 completed, google authorization;
+              $('#google-auth-success').show();
+              $('#google-auth-panel').show();
+              $('#slack-auth-request').show();
+              animate_show('#slack-auth-panel', 'bounceInDown');
+              $('#action-auth-slack').click(function(){
+                var newState = JSON.stringify($.extend({}, state, { g: params.code}));
+                slack_oauth(newState);
+                return false;
+              });
+              return;
+            }
+
+            // no step completed, initial layout
+            var newState = JSON.stringify(state);
+            $('#action-auth-google').click(function(){
+                var newState = JSON.stringify(state);
+                google_oauth(newState);
+                return false;
+            });
+            $('#google-auth-request').show();
+            animate_show('#google-auth-panel', 'bounceInDown');
+
+        })();
+      </script>
+      {{if .GoogleTrackingId}}
+      <script>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        ga('create', '{{.GoogleTrackingId}}', 'auto');
+        ga('require', 'linkid', 'linkid.js');
+        ga('require', 'displayfeatures');
+        ga('send', 'pageview');
+      </script>
+      {{end}}
+      {{if .UseGoogleAds}}
+      <script src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+      <script>
+        (adsbygoogle = window.adsbygoogle || []).push({});
+      </script>
+      {{end}}
+      <script src="/cookiechoices.min.js"></script>
+      <script>
+        document.addEventListener('DOMContentLoaded', function(event) {
+          cookieChoices.showCookieConsentBar('This site uses cookies for analytics purposes',
+            'Close', 'Privacy policy', '/policy.htm');
+        });
+      </script>
+    </body>
+</html>

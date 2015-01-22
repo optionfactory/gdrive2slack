@@ -1,0 +1,84 @@
+body { color: #333;}
+.main-column { background-color: #3D425E; color: #fefefe; padding-top: 5px; padding-bottom: 5px;}
+.main-title { }
+.subscription { margin-left: 0px; margin-right: 0px; }
+.subscription section { background-color: #efefef; text-align: left; color: #333;}
+.icon { color: #3D425E; text-align: center;}
+.note { font-size: 14px;}
+.title {display: table; padding-left: 10px; padding-right: 10px;  width: 100%;}
+.title div {display: table-row;}
+.title .symbol { width: 53px;}
+.title .action { width: 53px;}
+.title div div {display: table-cell; float: none; vertical-align: middle; padding-left: 5px; padding-right: 5px;}
+.title.disabled div div { color: #999;}
+.faq { font-size: 14px;  line-height: 1.5; padding-top: 30px;}
+.faq .title { padding-left: 0px;}
+.faq header { border-bottom: 1px solid #eee; margin-bottom: 5px; font-size: 20px; font-weight: bold;}
+.faq section { margin-bottom: 2em;}
+.disabled .icon { color: #999;}
+.divider { font-weight: 100;}
+.total { font-weight: 100; font-size: 65%;}
+.infinite-list {font-size: 85%;}
+.contacts { list-style-type: none; }
+.contacts li { line-height: 32px; margin-bottom: 10px;}
+.contacts li i {margin-right: 15px; color: #3D425E; vertical-align: middle;}
+.ads { margin-top: 20px; }
+
+footer {text-align: center; margin-top: 50px;}
+footer .logo-left {color:#2170b8;}
+footer .logo-right {color: #808080;}
+footer .us { color: #808080;}
+footer .copyright {color: #aaa; font-size: 10px;}
+
+/* firefox fix */
+.img-responsive { width: 100%; }
+/* vertical alignment styles */
+.col-top { vertical-align: top !important;}
+.col-middle { vertical-align: middle !important;}
+.col-bottom { vertical-align: bottom !important;}
+
+/* columns of same height styles */
+.container-xs-height { display:table; padding-left:0px; padding-right:0px; }
+.row-xs-height { display:table-row; }
+.col-xs-height { display:table-cell; float:none; }
+
+#cookieChoiceInfo { color: #eee; background-color: #3D425E !important; border-bottom: 2px solid #eee;}
+#cookieChocieInfo a { color: red /*#7eb1dc*/;}
+
+
+@media (max-width: 400px) {
+    .vertical { display: block;}
+    .horizontal { display: none;}
+}
+@media (min-width: 401px) {
+    .vertical { display: none;}
+    .horizontal { display: block;}
+}
+@media (min-width: 768px) {
+    .container-sm-height { display:table; padding-left:0px; padding-right:0px; }
+    .row-sm-height { display:table-row; }
+    .col-sm-height { display:table-cell; float:none; }
+    .faq { margin-top: 30px;}
+    .subscription { margin-left: 0px; margin-right: 0px; }
+}
+@media (min-width: 992px) {
+    .container-md-height { display:table; padding-left:0px; padding-right:0px; }
+    .row-md-height { display:table-row; }
+    .col-md-height { display:table-cell; float:none; }
+    .faq { margin-top: 30px;}
+    .faq section p {margin-left: 15px; margin-right:15px;}
+    .subscription { margin-left: 0px; margin-right: 0px; }
+    .main-column h1 { margin-bottom: 25px;}
+    .main-column p { margin-bottom: 75px;}
+    .ads { margin-top: 60vh; }
+}
+@media (min-width: 1200px) {
+    .container-lg-height { display:table; padding-left:0px; padding-right:0px; }
+    .row-lg-height { display:table-row; }
+    .col-lg-height { display:table-cell; float:none; }
+    .faq { margin-top: 30px; font-size: 16px;}
+    .faq header { font-size: 24px; }
+    .faq section p {margin-left: 15px; margin-right:15px;}
+    .subscription { margin-left: 10%; margin-right: 10%; }
+
+}
