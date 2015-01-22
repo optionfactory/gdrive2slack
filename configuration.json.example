@@ -1,0 +1,19 @@
+{
+	"bindAddress": "127.0.0.1:8000",
+	"googleTrackingId": "",
+	"useGoogleAds": false,
+	"google":{
+		"client_id" :"<GOOGLE_CLIENT_ID_HERE>",
+		"client_secret": "<GOOGLE_CLIENT_SECRET_HERE>",
+		"redirect_uri": "<YOUR_REDIRECT_URI_HERE>",
+		"auth_uri": "https://accounts.google.com/o/oauth2/auth",
+		"token_uri": "https://accounts.google.com/o/oauth2/token"
+	},
+	"slack":{
+		"client_id": "<SLACK_CLIENT_ID_HERE>",
+		"client_secret": "<SLACK_CLIENT_SECRET_HERE>",
+		"redirect_uri": "<YOUR_REDIRECT_URI_HERE>",
+		"auth_uri": "https://slack.com/oauth/authorize",
+		"token_uri": "https://slack.com/api/oauth.access"
+	}
+}
