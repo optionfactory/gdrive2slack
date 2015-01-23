@@ -111,9 +111,11 @@
                 </div>
               </section>
             </div>
+            {{if .GoogleAdsClientId}}
             <section class="ads">
-              <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-2016883978955735" data-ad-slot="5471195803" data-ad-format="auto"></ins>
+              <ins class="adsbygoogle" style="display:block" data-ad-client="{{.GoogleAdsClientId}}" data-ad-slot="{{.GoogleAdsSlotId}}" data-ad-format="auto"></ins>
             </section>
+            {{end}}
           </div>
           <div class="col-md-6 col-md-height faq">
             <section>
@@ -394,8 +396,8 @@
         ga('send', 'pageview');
       </script>
       {{end}}
-      {{if .UseGoogleAds}}
-      <script src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+      {{if .GoogleAdsClientId}}
+      <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
       <script>
         (adsbygoogle = window.adsbygoogle || []).push({});
       </script>
