@@ -15,6 +15,14 @@ var actionColors = []string{
 }
 
 func CreateSlackAttachment(change *drive.ChangeItem) *slack.Attachment {
+	var editor string
+	if len(change.File.LastModifyingUser.EmailAddress) > 0 && len(change.File.LastModifyingUser.DisplayName) > 0 {
+		editor = fmt.Sprintf("<mailto:%s|%s>", change.File.LastModifyingUser.EmailAddress, change.File.LastModifyingUser.DisplayName)
+	} else if len(change.File.LastModifyingUser.DisplayName) > 0 {
+		editor = change.File.LastModifyingUser.DisplayName
+	} else {
+		editor = "Unknown"
+	}
 	return &slack.Attachment{
 		Fallback: fmt.Sprintf("Changes Detected to file: <%s|%s>", change.File.AlternateLink, change.File.Title),
 		Color:    actionColors[change.LastAction],
@@ -26,7 +34,7 @@ func CreateSlackAttachment(change *drive.ChangeItem) *slack.Attachment {
 			},
 			{
 				Title: "Editor",
-				Value: fmt.Sprintf("<mailto:%s|%s>", change.File.LastModifyingUser.EmailAddress, change.File.LastModifyingUser.DisplayName),
+				Value: editor,
 				Short: true,
 			},
 		},
