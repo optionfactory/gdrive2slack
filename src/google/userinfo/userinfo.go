@@ -32,7 +32,7 @@ type Email struct {
 func GetUserInfo(client *http.Client, accessToken string) (*UserInfo, google.StatusCode, error){
 	u, _ := url.Parse("https://www.googleapis.com/plus/v1/people/me")
 	q := u.Query()
-	q.Set("fields", "name,circledByCount,displayName,emails")
+	q.Set("fields", "name,displayName,emails")
 	q.Set("userId", "me")
 	u.RawQuery = q.Encode()
 	req, _ := http.NewRequest("GET", u.String(), nil)
