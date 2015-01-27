@@ -12,13 +12,15 @@ Users can authorize their accounts by using the web interface in a few clicks.
 ## Your options:
 
 #### Learn more:
-* User authorization workflow
-* Required permissions (oauth)
+* [User authorization workflow](https://github.com/optionfactory/gdrive2slack/wiki#user-authorization-workflow)
+* [Required permissions (oauth)](https://github.com/optionfactory/gdrive2slack/wiki#required-permissions-\(oauth\))
  * Notifications
 
 #### Use our hosted service
   * It's free, and it's available [here](http://gdrive2slack.optionfactory.net)
  
 #### Run your own 
+* [here](https://github.com/optionfactory/gdrive2slack/wiki/Run-your-own)
 
-#### Build your own from sources
+#### Build your own service from sources
+* [here](https://github.com/optionfactory/gdrive2slack/wiki/Build-your-own-service-from-sources)
