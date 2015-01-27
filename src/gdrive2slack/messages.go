@@ -24,11 +24,11 @@ func CreateSlackAttachment(change *drive.ChangeItem) *slack.Attachment {
 		editor = "Unknown"
 	}
 	return &slack.Attachment{
-		Fallback: fmt.Sprintf("Changes Detected to file: <%s|%s>", change.File.AlternateLink, change.File.Title),
+		Fallback: fmt.Sprintf("Changes Detected to file <%s|%s>", change.File.AlternateLink, change.File.Title),
 		Color:    actionColors[change.LastAction],
 		Fields: []slack.Field{
 			{
-				Title: fmt.Sprintf("%s file:", change.LastAction.String()),
+				Title: fmt.Sprintf("%s file", change.LastAction.String()),
 				Value: fmt.Sprintf("<%s|%s>", change.File.AlternateLink, change.File.Title),
 				Short: true,
 			},
@@ -52,7 +52,7 @@ func CreateSlackMessage(userState *UserState) *slack.Message {
 	return &slack.Message{
 		Channel:     userState.Channel,
 		Username:    "Google Drive",
-		Text:        fmt.Sprintf("Activity on google drive: (hook for <mailto:%s|%s> → <@%s|%s>)", userState.GoogleUserInfo.Emails[0].Value, userState.GoogleUserInfo.DisplayName, userState.SlackUserInfo.UserId, userState.SlackUserInfo.User),
+		Text:        fmt.Sprintf("Activity on google drive (hook for <mailto:%s|%s> → <@%s|%s>):", userState.GoogleUserInfo.Emails[0].Value, userState.GoogleUserInfo.DisplayName, userState.SlackUserInfo.UserId, userState.SlackUserInfo.User),
 		IconUrl:     "http://gdrive2slack.optionfactory.net/gdrive2slack.png",
 		Attachments: attachments,
 	}
