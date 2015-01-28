@@ -20,8 +20,7 @@ Users can authorize their own accounts by using the web interface with just a fe
 #### Use our hosted service
   * It's free, simple and it's available [here](http://gdrive2slack.optionfactory.net)
  
-#### Run your own 
-* [here](https://github.com/optionfactory/gdrive2slack/wiki/Run-your-own-service)
+#### Run your own [service](https://github.com/optionfactory/gdrive2slack/wiki/Run-your-own-service)
 
-#### Build your own service from sources
-* [here](https://github.com/optionfactory/gdrive2slack/wiki/Build-your-own-service-from-sources)
+#### Build your own service [from sources](https://github.com/optionfactory/gdrive2slack/wiki/Build-your-own-service-from-sources)
+
