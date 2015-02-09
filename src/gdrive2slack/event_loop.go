@@ -74,9 +74,11 @@ func EventLoop(oauthConf *OauthConfiguration, logger *Logger, client *http.Clien
 		}
 		select {
 		case subscriptionAndAccessToken := <-registerChannel:
+			logger.Info("+subscription: %s", subscriptionAndAccessToken.Subscription.GoogleUserInfo.Email)
 			AddSubscription(userStates, subscriptions, subscriptionAndAccessToken.Subscription, subscriptionAndAccessToken.GoogleAccessToken)
 			SaveSubscriptions(subscriptions, subscriptionsFileName)
 		case email := <-discardChannel:
+			logger.Info("-subscription: %s", email)
 			RemoveSubscription(userStates, subscriptions, email)
 			SaveSubscriptions(subscriptions, subscriptionsFileName)
 		case s := <-signalsChannel:
