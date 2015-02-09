@@ -237,7 +237,7 @@
         }
 
         function google_oauth(state){
-            document.location.href = "{{.Google.AuthUri}}"
+            document.location.href = "https://accounts.google.com/o/oauth2/auth"
                 + "?state=" + encodeURIComponent(state)
                 + "&scope=" + encodeURIComponent([
                     "https://www.googleapis.com/auth/drive.metadata.readonly",
@@ -250,7 +250,7 @@
                 + "&response_type=code";
         }
         function slack_oauth(state){
-            document.location.href= "{{.Slack.AuthUri}}"
+            document.location.href= "https://slack.com/oauth/authorize"
                 +"?state=" + encodeURIComponent(state)
                 +"&scope=identify,post"
                 +"&client_id=" + encodeURIComponent("{{.Slack.ClientId}}")

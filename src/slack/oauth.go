@@ -56,8 +56,6 @@ func NewOauthStatusCodeFromError(ec string) OauthStatusCode {
 type OauthConfiguration struct {
 	ClientId     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
-	AuthUri      string `json:"auth_uri"`
-	TokenUri     string `json:"token_uri"`
 	RedirectUri  string `json:"redirect_uri"`
 }
 
@@ -73,7 +71,7 @@ type OauthState struct {
 }
 
 func NewAccessToken(conf *OauthConfiguration, client *http.Client, code string) (*OauthState, OauthStatusCode, error) {
-	response, err := client.PostForm(conf.TokenUri, url.Values{
+	response, err := client.PostForm("https://slack.com/api/oauth.access", url.Values{
 		"code":          {code},
 		"client_id":     {conf.ClientId},
 		"client_secret": {conf.ClientSecret},

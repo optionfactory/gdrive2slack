@@ -55,8 +55,6 @@ func (t *Timestamp) Gte(others ...Timestamp) bool {
 type OauthConfiguration struct {
 	ClientId     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
-	AuthUri      string `json:"auth_uri"`
-	TokenUri     string `json:"token_uri"`
 	RedirectUri  string `json:"redirect_uri"`
 }
 
@@ -73,7 +71,7 @@ type OauthState struct {
 }
 
 func NewAccessToken(conf *OauthConfiguration, client *http.Client, code string) (*OauthState, StatusCode, error) {
-	response, err := client.PostForm(conf.TokenUri, url.Values{
+	response, err := client.PostForm("https://accounts.google.com/o/oauth2/token", url.Values{
 		"code":          {code},
 		"client_id":     {conf.ClientId},
 		"client_secret": {conf.ClientSecret},
@@ -107,7 +105,7 @@ func NewAccessToken(conf *OauthConfiguration, client *http.Client, code string) 
 }
 
 func (self *OauthState) RefreshAccessToken(conf *OauthConfiguration, client *http.Client) (StatusCode, error) {
-	response, err := client.PostForm(conf.TokenUri, url.Values{
+	response, err := client.PostForm("https://accounts.google.com/o/oauth2/token", url.Values{
 		"client_secret": {conf.ClientSecret},
 		"client_id":     {conf.ClientId},
 		"refresh_token": {self.RefreshToken},
