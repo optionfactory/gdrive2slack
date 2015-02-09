@@ -8,10 +8,8 @@ import (
 )
 
 type Configuration struct {
-	BindAddress       string `json:"bindAddress"`
-	GoogleTrackingId  string `json:"googleTrackingId"`
-	GoogleAdsClientId string `json:"googleAdsClientId"`
-	GoogleAdsSlotId   string `json:"googleAdsSlotId"`
+	BindAddress      string `json:"bindAddress"`
+	GoogleTrackingId string `json:"googleTrackingId"`
 	*OauthConfiguration
 }
 
