@@ -23,7 +23,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	registerChannel := make(chan *gdrive2slack.UserState, 50)
+	registerChannel := make(chan *gdrive2slack.SubscriptionAndAccessToken, 50)
 	discardChannel := make(chan string, 50)
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.Signal(0xf))

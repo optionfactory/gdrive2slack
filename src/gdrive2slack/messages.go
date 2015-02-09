@@ -41,7 +41,7 @@ func CreateSlackAttachment(change *drive.ChangeItem) *slack.Attachment {
 	}
 }
 
-func CreateSlackMessage(userState *UserState) *slack.Message {
+func CreateSlackMessage(subscription *Subscription, userState *UserState) *slack.Message {
 
 	var attachments = make([]slack.Attachment, 0, len(userState.Gdrive.ChangeSet))
 
@@ -50,9 +50,9 @@ func CreateSlackMessage(userState *UserState) *slack.Message {
 	}
 
 	return &slack.Message{
-		Channel:     userState.Channel,
+		Channel:     subscription.Channel,
 		Username:    "Google Drive",
-		Text:        fmt.Sprintf("Activity on gdrive (configured by <@%s|%s>)", userState.SlackUserInfo.UserId, userState.SlackUserInfo.User),
+		Text:        fmt.Sprintf("Activity on gdrive (configured by <@%s|%s>)", subscription.SlackUserInfo.UserId, subscription.SlackUserInfo.User),
 		IconUrl:     "http://gdrive2slack.optionfactory.net/gdrive2slack.png",
 		Attachments: attachments,
 	}

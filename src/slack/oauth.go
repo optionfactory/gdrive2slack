@@ -60,17 +60,13 @@ type OauthConfiguration struct {
 }
 
 type OauthTokenResponse struct {
-	Ok    bool   `json:"ok"`
-	Error string `json:"error"`
-	*OauthState
-}
-
-type OauthState struct {
+	Ok          bool   `json:"ok"`
+	Error       string `json:"error"`
 	AccessToken string `json:"access_token"`
 	Scope       string `json:"scope"`
 }
 
-func NewAccessToken(conf *OauthConfiguration, client *http.Client, code string) (*OauthState, OauthStatusCode, error) {
+func NewAccessToken(conf *OauthConfiguration, client *http.Client, code string) (string, OauthStatusCode, error) {
 	response, err := client.PostForm("https://slack.com/api/oauth.access", url.Values{
 		"code":          {code},
 		"client_id":     {conf.ClientId},
@@ -78,16 +74,16 @@ func NewAccessToken(conf *OauthConfiguration, client *http.Client, code string) 
 		"redirect_uri":  {conf.RedirectUri},
 	})
 	if err != nil {
-		return nil, OauthCannotConnect, err
+		return "", OauthCannotConnect, err
 	}
 	defer response.Body.Close()
 	var self = new(OauthTokenResponse)
 	err = json.NewDecoder(response.Body).Decode(self)
 	if err != nil {
-		return nil, OauthCannotDeserialize, err
+		return "", OauthCannotDeserialize, err
 	}
 	if !self.Ok {
-		return nil, NewOauthStatusCodeFromError(self.Error), errors.New(self.Error)
+		return "", NewOauthStatusCodeFromError(self.Error), errors.New(self.Error)
 	}
-	return self.OauthState, OauthOk, nil
+	return self.AccessToken, OauthOk, nil
 }

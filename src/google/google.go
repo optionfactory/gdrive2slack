@@ -66,11 +66,9 @@ type OauthError struct {
 type OauthState struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
-	TokenType    string `json:"token_type"`
-	ExpiresIn    int64  `json:"expires_in"`
 }
 
-func NewAccessToken(conf *OauthConfiguration, client *http.Client, code string) (*OauthState, StatusCode, error) {
+func NewAccessToken(conf *OauthConfiguration, client *http.Client, code string) (string, string, StatusCode, error) {
 	response, err := client.PostForm("https://accounts.google.com/o/oauth2/token", url.Values{
 		"code":          {code},
 		"client_id":     {conf.ClientId},
@@ -79,87 +77,88 @@ func NewAccessToken(conf *OauthConfiguration, client *http.Client, code string) 
 		"grant_type":    {"authorization_code"},
 	})
 	if err != nil {
-		return nil, CannotConnect, err
+		return "", "", CannotConnect, err
 	}
 	defer response.Body.Close()
 	if response.StatusCode >= 400 {
 		oauthError := &OauthError{}
 		err = json.NewDecoder(response.Body).Decode(oauthError)
 		if err != nil {
-			return nil, CannotDeserialize, err
+			return "", "", CannotDeserialize, err
 		}
 		if response.StatusCode >= 500 {
-			return nil, ServerError, errors.New(oauthError.ErrorDescription)
+			return "", "", ServerError, errors.New(oauthError.ErrorDescription)
 		}
 		if response.StatusCode == 401 || response.StatusCode == 403 {
-			return nil, Unauthorized, errors.New(oauthError.ErrorDescription)
+			return "", "", Unauthorized, errors.New(oauthError.ErrorDescription)
 		}
-		return nil, ApiError, errors.New(oauthError.ErrorDescription)
+		return "", "", ApiError, errors.New(oauthError.ErrorDescription)
 	}
 	var self = new(OauthState)
 	err = json.NewDecoder(response.Body).Decode(self)
 	if err != nil {
-		return nil, CannotDeserialize, err
+		return "", "", CannotDeserialize, err
 	}
-	return self, Ok, nil
+	return self.RefreshToken, self.AccessToken, Ok, nil
 }
 
-func (self *OauthState) RefreshAccessToken(conf *OauthConfiguration, client *http.Client) (StatusCode, error) {
+func RefreshAccessToken(conf *OauthConfiguration, client *http.Client, refreshToken string) (string, StatusCode, error) {
 	response, err := client.PostForm("https://accounts.google.com/o/oauth2/token", url.Values{
 		"client_secret": {conf.ClientSecret},
 		"client_id":     {conf.ClientId},
-		"refresh_token": {self.RefreshToken},
+		"refresh_token": {refreshToken},
 		"grant_type":    {"refresh_token"},
 	})
 	if err != nil {
-		return CannotConnect, err
+		return "", CannotConnect, err
 	}
 	defer response.Body.Close()
 	if response.StatusCode >= 400 {
 		oauthError := &OauthError{}
 		err = json.NewDecoder(response.Body).Decode(oauthError)
 		if err != nil {
-			return CannotDeserialize, err
+			return "", CannotDeserialize, err
 		}
 		if response.StatusCode >= 500 {
-			return ServerError, errors.New(oauthError.ErrorDescription)
+			return "", ServerError, errors.New(oauthError.ErrorDescription)
 		}
 		if response.StatusCode == 400 && oauthError.Error == "invalid_grant" {
-			return Unauthorized, errors.New(oauthError.Error)
+			return "", Unauthorized, errors.New(oauthError.Error)
 		}
 		if response.StatusCode == 401 || response.StatusCode == 403 {
-			return Unauthorized, errors.New(oauthError.ErrorDescription)
+			return "", Unauthorized, errors.New(oauthError.ErrorDescription)
 		}
-		return ApiError, errors.New(oauthError.ErrorDescription)
+		return "", ApiError, errors.New(oauthError.ErrorDescription)
 	}
+	var self = new(OauthState)
 	err = json.NewDecoder(response.Body).Decode(self)
 	if err != nil {
-		return CannotDeserialize, err
+		return "", CannotDeserialize, err
 	}
-	return Ok, nil
+	return self.AccessToken, Ok, nil
 }
 
 type callback func(string) (StatusCode, error)
 
-func (self *OauthState) DoWithAccessToken(conf *OauthConfiguration, client *http.Client, cb callback) error {
-	code, err := cb(self.AccessToken)
+func DoWithAccessToken(conf *OauthConfiguration, client *http.Client, refreshToken string, accessToken string, cb callback) (string, error) {
+	code, err := cb(accessToken)
 	if code == Ok {
-		return nil
+		return accessToken, nil
 	}
 	if code == Unauthorized {
-		code, err = self.RefreshAccessToken(conf, client)
+		accessToken, code, err = RefreshAccessToken(conf, client, refreshToken)
 		if code == Unauthorized {
 			panic(err)
 		}
 		if code != Ok {
-			return err
+			return accessToken, err
 		}
 	}
-	code, err = cb(self.AccessToken)
+	code, err = cb(accessToken)
 	if code == Unauthorized {
 		panic(err)
 	}
-	return err
+	return accessToken, err
 }
 
 type StatusCode int

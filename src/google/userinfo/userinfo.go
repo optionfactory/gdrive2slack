@@ -11,23 +11,27 @@ import (
 
 type response struct {
 	Error *google.ErrorResponse `json:"error"`
-	*UserInfo
-}
-
-type UserInfo struct {
 	DisplayName string `json:"displayName"`
-	Name Name `json:"name"`
-	Emails []Email `json:"emails"`
+	Name name `json:"name"`
+	Emails []email `json:"emails"`
 }
 
-type Name struct {
+type name struct {
 	GivenName string `json:"givenName"`
 	FamilyName string `json:"familyName"`
 }
 
-type Email struct { 
+type email struct { 
 	Value string `json:"value"`
 }
+
+type UserInfo struct {
+	DisplayName string `json:displayName`
+	GivenName string `json:"givenName"`
+	FamilyName string `json:"familyName"`
+	Email string `json:"email"`
+}
+
 
 func GetUserInfo(client *http.Client, accessToken string) (*UserInfo, google.StatusCode, error){
 	u, _ := url.Parse("https://www.googleapis.com/plus/v1/people/me")
@@ -54,5 +58,11 @@ func GetUserInfo(client *http.Client, accessToken string) (*UserInfo, google.Sta
 		}
 		return nil, google.ApiError, errors.New(deser.Error.Message)
 	}	
-	return deser.UserInfo, google.Ok, nil
+	userInfo := &UserInfo{
+		DisplayName: deser.DisplayName, 
+		GivenName: deser.Name.GivenName,
+		FamilyName: deser.Name.FamilyName,
+		Email: deser.Emails[0].Value,
+	}
+	return userInfo, google.Ok, nil
 }

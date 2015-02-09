@@ -5,7 +5,6 @@ import (
 	"github.com/go-martini/martini"
 	"github.com/martini-contrib/render"
 	"github.com/optionfactory/gdrive2slack/google"
-	"github.com/optionfactory/gdrive2slack/google/drive"
 	"github.com/optionfactory/gdrive2slack/google/userinfo"
 	"github.com/optionfactory/gdrive2slack/slack"
 	"net/http"
@@ -21,7 +20,7 @@ type ErrResponse struct {
 	Error string `json:"error"`
 }
 
-func ServeHttp(client *http.Client, registerChannel chan *UserState, configuration *Configuration) {
+func ServeHttp(client *http.Client, registerChannel chan *SubscriptionAndAccessToken, configuration *Configuration) {
 	r := martini.NewRouter()
 	mr := martini.New()
 	mr.Use(martini.Recovery())
@@ -55,35 +54,37 @@ func ServeHttp(client *http.Client, registerChannel chan *UserState, configurati
 		if r.Channel == "" {
 			r.Channel = "#general"
 		}
-		at, status, err := google.NewAccessToken(configuration.Google, client, r.GoogleCode)
+		googleRefreshToken, googleAccessToken, status, err := google.NewAccessToken(configuration.Google, client, r.GoogleCode)
 		if status != google.Ok {
 			renderer.JSON(500, &ErrResponse{err.Error()})
 			return
 		}
-		sat, ostatus, err := slack.NewAccessToken(configuration.Slack, client, r.SlackCode)
+		slackAccessToken, ostatus, err := slack.NewAccessToken(configuration.Slack, client, r.SlackCode)
 		if ostatus != slack.OauthOk {
 			renderer.JSON(500, &ErrResponse{err.Error()})
 			return
 		}
-		gUserInfo, status, err := userinfo.GetUserInfo(client, at.AccessToken)
+		gUserInfo, status, err := userinfo.GetUserInfo(client, googleAccessToken)
 		if status != google.Ok {
 			renderer.JSON(500, &ErrResponse{err.Error()})
 			return
 		}
-		sUserInfo, sstatus, err := slack.GetUserInfo(client, sat.AccessToken)
+		sUserInfo, sstatus, err := slack.GetUserInfo(client, slackAccessToken)
 		if sstatus != slack.Ok {
 			renderer.JSON(500, &ErrResponse{err.Error()})
 			return
 		}
-		userState := &UserState{
-			r.Channel,
-			sat,
-			at,
-			gUserInfo,
-			sUserInfo,
-			drive.NewState(),
+		subscriptionAndAccessToken := &SubscriptionAndAccessToken{
+			Subscription: &Subscription{
+				r.Channel,
+				slackAccessToken,
+				googleRefreshToken,
+				gUserInfo,
+				sUserInfo,
+			},
+			GoogleAccessToken: googleAccessToken,
 		}
-		registerChannel <- userState
+		registerChannel <- subscriptionAndAccessToken
 		// show sUserInfo too
 		renderer.JSON(200, &gUserInfo)
 	})
