@@ -26,7 +26,7 @@ type email struct {
 }
 
 type UserInfo struct {
-	DisplayName string `json:displayName`
+	DisplayName string `json:"displayName"`
 	GivenName string `json:"givenName"`
 	FamilyName string `json:"familyName"`
 	Email string `json:"email"`
