@@ -18,9 +18,11 @@
                 Make sure your team is on the same page. 
                 Get Slack notifications whenever new documents are created or when existing ones are shared with you, modified or deleted.
         </div>
+
+      <!-- REGISTRATION -->
       <div class="container container-md-height">
         <div class="row row-md-height">
-          <div class="col-md-6 text-center main-column col-md-height">
+          <div class="col-md-12 text-center main-column col-md-height">
             <h1 class="main-title horizontal">Google Drive &#8594; Slack</h1>
             <h1 class="main-title vertical">Google Drive<br>&#8595;<br>Slack</h1>
             <p class="lead">Slack notifications whenever you work on Google Drive docs</p>
@@ -44,12 +46,6 @@
                   <div>Registration in progress, please wait...</div>
                 </div>
               </section>
-              <section id="registration-step" class="panel-body title disabled" style="display: none">
-                <div>
-                  <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><strong class="fa-stack-1x fa-inverse"><span>4</span><span class="divider">/</span><span class="total">3</span></strong></span></div>
-                  <div>Collect authorizations and complete subscription</div>
-                </div>
-              </section>
             </div>
 
             <div id="slack-channel-panel" class="panel panel-default subscription" style="display: none">
@@ -66,12 +62,6 @@
                   <div class="action col-bottom"><button id="action-select-channel" class="btn btn-primary push-right">Go</button></div>
                 </div>
               </section>
-              <section id="slack-channel-step" class="panel-body title disabled" style="display: none">
-                <div>
-                  <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><strong class="fa-stack-1x fa-inverse"><span>3</span><span class="divider">/</span><span class="total">3</span></strong></span></div>
-                  <div>Select Slack <i>#channel</i> or <i>@user</i></div>
-                </div>
-              </section>
             </div>
 
             <div id="slack-auth-panel" class="panel panel-default subscription" style="display: none">
@@ -86,12 +76,6 @@
                   <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><strong class="fa-stack-1x fa-inverse"><span>2</span><span class="divider">/</span><span class="total">3</span></strong></span></div>
                   <div>Authorize access to Slack domain</div>
                   <div class="action"><button id="action-auth-slack" class="btn btn-primary push-right">Go</button></div>
-                </div>
-              </section>
-              <section id="slack-auth-step" class="panel-body title disabled" style="display: none">
-                <div>
-                  <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><strong class="fa-stack-1x fa-inverse"><span>2</span><span class="divider">/</span><span class="total">3</span></strong></span></div>
-                  <div>Authorize access to Slack domain</div>
                 </div>
               </section>
             </div>
@@ -112,7 +96,13 @@
               </section>
             </div>
           </div>
-          <div class="col-md-6 col-md-height faq">
+        </div>
+      </div>
+      
+      <!-- FAQ -->
+      <div class="container container-md-height faq">
+        <div class="row row-md-height">
+          <div class="col-md-6 col-md-height">
             <section>
               <header class="title">
                 <div>
@@ -124,6 +114,8 @@
               <p>This is something more than what is available from other services, you will in fact receive notifications not only when <b>new</b> documents are created, but also when existing ones are <b>shared</b> with you, <b>modified</b> or <b>deleted</b>.</p>
 			        <p><b>Disclaimer:</b> this service is not created by, affiliated with, or supported by neither Slack Technologies, Inc. nor Google, Inc.</p>
             </section>
+          </div>
+          <div class="col-md-6 col-md-height">
             <section>
               <header class="title">
                 <div>
@@ -137,8 +129,12 @@
                 <li>Authorize our service to send you messages on Slack</li>
                 <li>Choose a Slack <i>#channel</i>, <i>@user</i> or leave blank for <i>#general</i></li>
               </ul>
-              <p>Just click "Go" on the first step to begin, our wizard will guide you through the complete process.</p>
+              <p><strong>Just click "Go" on the first step to begin, our wizard will guide you through the complete process.</strong></p>
             </section>
+          </div>
+        </div>
+        <div class="row row-md-height">
+          <div class="col-md-6 col-md-height">
             <section>
               <header class="title">
                 <div>
@@ -152,25 +148,21 @@
                 <li><i class="fa fa-2x fa-twitter"></i><a href="http://twitter.com/option_factory">@Option_factory</a></li>
               </ul>
             </section>
+          </div>
+          <div class="col-md-6 col-md-height">
             <section>
               <header class="title">
                 <div>
-                  <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><i class="fa fa-key fa-stack-1x fa-inverse"></i></span></div>
-                  <div>Which permissions do you require?</div>
+                  <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><i class="fa fa-bell-slash-o fa-stack-1x fa-inverse"></i></span></div>
+                  <div>How do I unsubscribe?</div>
                 </div>
               </header>
-              <p>We ask for the bare minimum permissions required to offer our service.</p>
-              <p>On Slack:</p>
-              <ul>
-                <li><b>post</b> to be able to send new messages to your slack domain</li>
-              </ul>
-              <p>On Google:</p>
-              <ul>
-                <li><b>email address and basic profile info</b> to discriminate between different users</li>
-                <li><b>metadata for files and documents in your Google Drive</b> to access Google Drive changes stream</li>
-              </ul>
-              <p>We <strong>do not</strong> require any kind of read/write permissions on your file contents.</p>
+              <p>Just revoke authorizations for our application from your <a href="https://security.google.com/settings/security/permissions" target="_blank">Google account</a> and from your <a href="https://api.slack.com/tokens" target="_blank">Slack account</a>.</p>              
             </section>
+          </div>
+        </div>
+        <div class="row row-md-height">
+          <div class="col-md-6 col-md-height">
             <section>
               <header class="title">
                 <div>
@@ -202,15 +194,35 @@
                 </div>
               </div>
             </section>
+          </div>
+          <div class="col-md-6 col-md-height">
             <section>
               <header class="title">
                 <div>
-                  <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><i class="fa fa-bell-slash-o fa-stack-1x fa-inverse"></i></span></div>
-                  <div>How do I unsubscribe?</div>
+                  <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><i class="fa fa-key fa-stack-1x fa-inverse"></i></span></div>
+                  <div>Which permissions do you require?</div>
                 </div>
               </header>
-              <p>Just revoke authorizations for our application from your <a href="https://security.google.com/settings/security/permissions" target="_blank">Google account</a> and from your <a href="https://api.slack.com/tokens" target="_blank">Slack account</a>.</p>              
+              <p>We ask for the bare minimum permissions required to offer our service.</p>
+              <p>On Slack:</p>
+              <ul>
+                <li><b>post</b> to be able to send new messages to your slack domain</li>
+              </ul>
+              <p>On Google:</p>
+              <ul>
+                <li><b>email address and basic profile info</b> to discriminate between different users</li>
+                <li><b>metadata for files and documents in your Google Drive</b> to access Google Drive changes stream</li>
+              </ul>
+              <p>We <strong>do not</strong> require any kind of read/write permissions on your file contents.</p>
             </section>
+          </div>
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <div class="container container-md-height">
+        <div class="row row-md-height">
+          <div class="col-md-12 col-md-height">
             <footer>
               <div class="us">One more option from the awesome folks at <a href="http://www.optionfactory.net"><strong class="logo-left">Option</strong><strong class="logo-right">Factory</strong></a>.</div>
               <div class="copyright">OptionFactory S.r.l. - Corso Sempione 77, 20149 Milano. Capitale sociale i.v. 25.000€. P.IVA IT08721210964</div>
@@ -219,8 +231,12 @@
           </div>
         </div>
       </div>
+      
+      <!-- GitHub ribbon-->
       <a href="https://github.com/optionfactory/gdrive2slack"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/365986a132ccd6a44c23a9169022c0b5c890c387/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f7265645f6161303030302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png"></a>
-  		<script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
+  		
+
+      <script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
       <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
       <script type="text/javascript">
         $.url_params = function(){
