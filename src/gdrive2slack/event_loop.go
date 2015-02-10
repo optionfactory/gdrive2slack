@@ -43,7 +43,7 @@ func task(logger *Logger, client *http.Client, discardChannel chan string, waitG
 	if len(userState.Gdrive.ChangeSet) > 0 {
 		logger.Info("[%s/%s] @%v %v changes", email, slackUser, userState.Gdrive.LargestChangeId, len(userState.Gdrive.ChangeSet))
 		message := CreateSlackMessage(subscription, userState, version)
-		status, err := slack.PostMessage(client, message, subscription.SlackAccessToken)
+		status, err := slack.PostMessage(client, subscription.SlackAccessToken, message)
 		if status == slack.NotAuthed || status == slack.InvalidAuth || status == slack.AccountInactive || status == slack.TokenRevoked {
 			panic(err)
 		}

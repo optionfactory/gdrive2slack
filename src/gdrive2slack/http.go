@@ -81,15 +81,14 @@ func ServeHttp(client *http.Client, registerChannel chan *SubscriptionAndAccessT
 			return
 		}
 
-		welcomeMessage := &slack.Message{
+		cstatus, err := slack.PostMessage(client, slackAccessToken, &slack.Message{
 			Channel:  r.Channel,
 			Username: "Google Drive",
 			Text:     fmt.Sprintf("A <%s|GDrive2Slack> integration has been configured by <@%s|%s>. Activities on Google Drive documents will be notified here.", configuration.Google.RedirectUri, sUserInfo.UserId, sUserInfo.User),
 			IconUrl:  "http://gdrive2slack.optionfactory.net/gdrive2slack.png",
-		}
-		cstatus, err := slack.PostMessage(client, welcomeMessage, slackAccessToken)
+		})
 
-		subscriptionAndAccessToken := &SubscriptionAndAccessToken{
+		registerChannel <- &SubscriptionAndAccessToken{
 			Subscription: &Subscription{
 				r.Channel,
 				slackAccessToken,
@@ -99,9 +98,7 @@ func ServeHttp(client *http.Client, registerChannel chan *SubscriptionAndAccessT
 			},
 			GoogleAccessToken: googleAccessToken,
 		}
-		registerChannel <- subscriptionAndAccessToken
 
-		// show sUserInfo too
 		renderer.JSON(200, map[string]interface{}{
 			"user":         gUserInfo,
 			"channelFound": cstatus == slack.Ok,

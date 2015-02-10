@@ -129,7 +129,7 @@ func GetUserInfo(client *http.Client, accessToken string) (*UserInfo, StatusCode
 	return self.UserInfo, Ok, nil
 }
 
-func PostMessage(client *http.Client, message *Message, accessToken string) (StatusCode, error) {
+func PostMessage(client *http.Client, accessToken string, message *Message) (StatusCode, error) {
 	payload, _ := json.Marshal(message.Attachments)
 	response, err := client.PostForm("https://slack.com/api/chat.postMessage", url.Values{
 		"token":       {accessToken},
