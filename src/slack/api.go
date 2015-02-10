@@ -20,6 +20,7 @@ const (
 	RateLimited
 	NotAuthed
 	InvalidAuth
+	TokenRevoked
 	AccountInactive
 	UserIsBot
 	UnknownError
@@ -48,6 +49,7 @@ var errorLabelToStatusCode = map[string]StatusCode{
 	"rate_limited":      RateLimited,
 	"not_authed":        NotAuthed,
 	"invalid_auth":      InvalidAuth,
+	"token_revoked":     TokenRevoked,
 	"account_inactive":  AccountInactive,
 	"user_is_bot":       UserIsBot,
 }
@@ -63,6 +65,7 @@ var statusCodes = []string{
 	RateLimited:       "rate_limited",
 	NotAuthed:         "not_authed",
 	InvalidAuth:       "invalid_auth",
+	TokenRevoked:      "token_revoked",
 	AccountInactive:   "account_inactive",
 	UserIsBot:         "user_is_bot",
 	UnknownError:      "unknown_error",
