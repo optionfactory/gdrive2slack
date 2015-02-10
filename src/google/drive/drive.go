@@ -2,22 +2,20 @@ package drive
 
 import (
 	"encoding/json"
+	"errors"
+	"github.com/optionfactory/gdrive2slack/google"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
-	"github.com/optionfactory/gdrive2slack/google"
-	"errors"
 )
 
-
 type changes struct {
-	LargestChangeId string         `json:"largestChangeId"`
-	Items           []ChangeItem   `json:"items"`
+	LargestChangeId string                `json:"largestChangeId"`
+	Items           []ChangeItem          `json:"items"`
 	Error           *google.ErrorResponse `json:"error"`
 }
-
 
 type ChangeItem struct {
 	Deleted    bool        `json:"deleted"`
@@ -26,15 +24,15 @@ type ChangeItem struct {
 	File       ChangedFile `json:"file"`
 }
 
-
 type ItemType int
+
 const (
 	File ItemType = iota
 	Folder
 )
 
 var itemTypeNames = []string{
-	File: "file",
+	File:   "file",
 	Folder: "folder",
 }
 
@@ -42,18 +40,16 @@ func (t ItemType) String() string {
 	return itemTypeNames[t]
 }
 
-
 type ChangedFile struct {
-	ExplicitlyTrashed bool      `json:"explicitlyTrashed"`
-	LastModifyingUser User      `json:"lastModifyingUser"`
-	AlternateLink     string    `json:"alternateLink"`
-	MimeType          string    `json:"mimeType"`
+	ExplicitlyTrashed bool             `json:"explicitlyTrashed"`
+	LastModifyingUser User             `json:"lastModifyingUser"`
+	AlternateLink     string           `json:"alternateLink"`
+	MimeType          string           `json:"mimeType"`
 	CreatedDate       google.Timestamp `json:"createdDate"`
 	ModifiedDate      google.Timestamp `json:"modifiedDate"`
 	SharedWithMeDate  google.Timestamp `json:"sharedWithMeDate"`
-	Title             string    `json:"title"`
+	Title             string           `json:"title"`
 }
-
 
 type Action int
 
@@ -102,11 +98,10 @@ func (t *ChangeItem) updateLastAction(timeRef time.Time) {
 func (t *ChangeItem) updateType() {
 	if t.File.MimeType == "application/vnd.google-apps.folder" {
 		t.Type = Folder
-		}else{
-			t.Type = File
-		}
+	} else {
+		t.Type = File
+	}
 }
-
 
 type User struct {
 	EmailAddress string `json:"emailAddress"`
@@ -114,18 +109,15 @@ type User struct {
 }
 
 type GracePeriodKey struct {
-	FileTitle string
+	FileTitle              string
 	LastModifyingUserEmail string
 }
 
-
 type State struct {
 	LargestChangeId uint64
-	InGracePeriod       map[GracePeriodKey]time.Time
+	InGracePeriod   map[GracePeriodKey]time.Time
 	ChangeSet       []ChangeItem
 }
-
-
 
 func NewState() *State {
 	return &State{
@@ -133,10 +125,8 @@ func NewState() *State {
 	}
 }
 
-
-
 func query(client *http.Client, state *State, accessToken string) (google.StatusCode, error) {
-	var timeRef = time.Now();
+	var timeRef = time.Now()
 	u, _ := url.Parse("https://www.googleapis.com/drive/v2/changes")
 	q := u.Query()
 	if state.LargestChangeId == 0 {
@@ -179,7 +169,7 @@ func query(client *http.Client, state *State, accessToken string) (google.Status
 	for _, item := range changes.Items {
 		item.updateLastAction(timeRef)
 		item.updateType()
-		if item.LastAction == Viewed || item.File.Title == ""{
+		if item.LastAction == Viewed || item.File.Title == "" {
 			continue
 		}
 		k := GracePeriodKey{item.File.Title, item.File.LastModifyingUser.EmailAddress}

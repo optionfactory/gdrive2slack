@@ -68,6 +68,6 @@ $(PROJECT)-%: format *.go
 
 format:
 	@echo reformatting
-	@gofmt -w=true -s=true *.go */*.go
+	@gofmt -w=true -s=true .
 
 FORCE:
