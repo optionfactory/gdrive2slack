@@ -9,9 +9,11 @@ import (
 	"time"
 )
 
+var version string
+
 func main() {
 	logger := gdrive2slack.New(os.Stdout, "", 0)
-
+	logger.Info("gdrive2slack version:%s", version)
 	if len(os.Args) != 2 {
 		logger.Error("usage: %s <configuration_file>", os.Args[0])
 		os.Exit(1)
@@ -34,5 +36,5 @@ func main() {
 
 	go gdrive2slack.EventLoop(configuration.OauthConfiguration, logger, client, registerChannel, discardChannel, signals)
 
-	gdrive2slack.ServeHttp(client, registerChannel, configuration)
+	gdrive2slack.ServeHttp(client, registerChannel, configuration, version)
 }

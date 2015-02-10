@@ -1,8 +1,8 @@
 PROJECT=gdrive2slack
 UID=$(shell id -u)
 GID=$(shell id -g)
+VERSION=$(shell git describe --always)
 SHELL = /bin/bash
-
 local: FORCE
 	@echo spawning docker container
 	docker run --rm=true \
@@ -11,7 +11,7 @@ local: FORCE
 		-v ${PWD}/bin:/go/bin \
 		-w /go/src/github.com/optionfactory/gdrive2slack/ \
 		golang:1.4-cross \
-		make -f /go/Makefile $(PROJECT)-linux-amd64 UID=${UID} GID=${GID}	
+		make -f /go/Makefile $(PROJECT)-linux-amd64 UID=${UID} GID=${GID} VERSION=${VERSION}
 
 run-local: local
 	bin/$(PROJECT)-linux-amd64 configuration.json
@@ -24,7 +24,7 @@ all: FORCE
 		-v ${PWD}/bin:/go/bin \
 		-w /go/src/github.com/optionfactory/gdrive2slack/ \
 		golang:1.4-cross \
-		make -f /go/Makefile build UID=${UID} GID=${GID}
+		make -f /go/Makefile build UID=${UID} GID=${GID} VERSION=${VERSION}
 
 clean: FORCE
 	-rm -rf bin/$(PROJECT)-*
@@ -57,7 +57,7 @@ $(PROJECT)-%-arm: GOARCH = arm
 $(PROJECT)-%: format *.go
 	@echo building for $(GOOS):$(GOARCH)
 	@GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go get -installsuffix netgo ./...
-	@GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go install -a -tags netgo -installsuffix netgo
+	@GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go install -a -tags netgo -installsuffix netgo -ldflags "-X main.version $(VERSION)"
 	@if [ "${GOOS}" == "linux" -a "${GOARCH}" == "amd64" ]; then \
 		mv "/go/bin/${PROJECT}${EXT}" "/go/bin/${PROJECT}-${GOOS}-${GOARCH}${EXT}"; \
 	else \
