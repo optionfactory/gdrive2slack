@@ -24,11 +24,11 @@ func CreateSlackAttachment(change *drive.ChangeItem) *slack.Attachment {
 		editor = "Unknown"
 	}
 	return &slack.Attachment{
-		Fallback: fmt.Sprintf("Changes Detected to file <%s|%s>", change.File.AlternateLink, change.File.Title),
+		Fallback: fmt.Sprintf("Changes Detected to %s <%s|%s>", change.Type, change.File.AlternateLink, change.File.Title),
 		Color:    actionColors[change.LastAction],
 		Fields: []slack.Field{
 			{
-				Title: fmt.Sprintf("%s file", change.LastAction.String()),
+				Title: fmt.Sprintf("%s %s", change.LastAction, change.Type),
 				Value: fmt.Sprintf("<%s|%s>", change.File.AlternateLink, change.File.Title),
 				Short: true,
 			},

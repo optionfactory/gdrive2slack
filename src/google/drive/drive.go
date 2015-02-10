@@ -22,7 +22,24 @@ type changes struct {
 type ChangeItem struct {
 	Deleted    bool        `json:"deleted"`
 	LastAction Action      `json:"-"`
+	Type       ItemType    `json:"-"`
 	File       ChangedFile `json:"file"`
+}
+
+
+type ItemType int
+const (
+	File ItemType = iota
+	Folder
+)
+
+var itemTypeNames = []string{
+	File: "file",
+	Folder: "folder",
+}
+
+func (t ItemType) String() string {
+	return itemTypeNames[t]
 }
 
 
@@ -81,6 +98,15 @@ func (t *ChangeItem) updateLastAction(timeRef time.Time) {
 	}
 	t.LastAction = Viewed
 }
+
+func (t *ChangeItem) updateType() {
+	if t.File.MimeType == "application/vnd.google-apps.folder" {
+		t.Type = Folder
+		}else{
+			t.Type = File
+		}
+}
+
 
 type User struct {
 	EmailAddress string `json:"emailAddress"`
@@ -152,6 +178,7 @@ func query(client *http.Client, state *State, accessToken string) (google.Status
 	var threshold = timeRef.Add(time.Duration(-60) * time.Minute)
 	for _, item := range changes.Items {
 		item.updateLastAction(timeRef)
+		item.updateType()
 		if item.LastAction == Viewed || item.File.Title == ""{
 			continue
 		}
