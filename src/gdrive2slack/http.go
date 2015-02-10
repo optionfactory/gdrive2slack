@@ -8,6 +8,8 @@ import (
 	"github.com/optionfactory/gdrive2slack/google/userinfo"
 	"github.com/optionfactory/gdrive2slack/slack"
 	"net/http"
+
+	"fmt"
 )
 
 type Request struct {
@@ -74,6 +76,15 @@ func ServeHttp(client *http.Client, registerChannel chan *SubscriptionAndAccessT
 			renderer.JSON(500, &ErrResponse{err.Error()})
 			return
 		}
+
+		welcomeMessage := &slack.Message{
+			Channel:  r.Channel,
+			Username: "Google Drive",
+			Text:     fmt.Sprintf("A <%s|GDrive2Slack> integration has been configured by <@%s|%s>. Activities on Google Drive documents will be notified here.", configuration.Google.RedirectUri, sUserInfo.UserId, sUserInfo.User),
+			IconUrl:  "http://gdrive2slack.optionfactory.net/gdrive2slack.png",
+		}
+		cstatus, err := slack.PostMessage(client, welcomeMessage, slackAccessToken)
+
 		subscriptionAndAccessToken := &SubscriptionAndAccessToken{
 			Subscription: &Subscription{
 				r.Channel,
@@ -85,8 +96,12 @@ func ServeHttp(client *http.Client, registerChannel chan *SubscriptionAndAccessT
 			GoogleAccessToken: googleAccessToken,
 		}
 		registerChannel <- subscriptionAndAccessToken
+
 		// show sUserInfo too
-		renderer.JSON(200, &gUserInfo)
+		renderer.JSON(200, map[string]interface{}{
+			"user":         gUserInfo,
+			"channelFound": cstatus == slack.Ok,
+		})
 	})
 	m.RunOnAddr(configuration.BindAddress)
 }

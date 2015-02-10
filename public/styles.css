@@ -46,6 +46,8 @@ footer .copyright {color: #aaa; font-size: 10px;}
 #cookieChoiceInfo { color: #eee; background-color: #3D425E !important; border-bottom: 2px solid #eee;}
 #cookieChocieInfo a { color: red /*#7eb1dc*/;}
 
+.text-warning { color: #FF851B;}
+.text-success { color: #5CB85C;}
 
 @media (max-width: 568px) {
     .main-column { padding-top: 35px; padding-bottom: 35px; }
