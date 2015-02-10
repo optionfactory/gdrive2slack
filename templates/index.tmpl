@@ -6,8 +6,8 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="description" content="Frictionless integration between Google Drive and Slack">
       <meta name="keywords" content="slack,google,drive,gdrive,integration">
-      <link rel="shortcut icon" href="/favicon.ico">
-      <link rel="apple-touch-icon" href="/favicon.png">
+      <link rel="shortcut icon" href="/favicon.ico?ck={{.Version}}">
+      <link rel="apple-touch-icon" href="/favicon.png?ck={{.Version}}">
       <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" rel="stylesheet">
       <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
       <link href="styles.css" rel="stylesheet">
@@ -275,8 +275,8 @@
                     "https://www.googleapis.com/auth/drive.metadata.readonly",
                     "https://www.googleapis.com/auth/userinfo.email",
                     "https://www.googleapis.com/auth/userinfo.profile"].join(" "))
-                + "&client_id=" + encodeURIComponent("{{.Google.ClientId}}")
-                + "&redirect_uri=" + encodeURIComponent("{{.Google.RedirectUri}}")
+                + "&client_id=" + encodeURIComponent("{{.Configuration.Google.ClientId}}")
+                + "&redirect_uri=" + encodeURIComponent("{{.Configuration.Google.RedirectUri}}")
                 + "&access_type=offline"
                 + "&approval_prompt=force"
                 + "&response_type=code";
@@ -285,8 +285,8 @@
             document.location.href= "https://slack.com/oauth/authorize"
                 +"?state=" + encodeURIComponent(state)
                 +"&scope=identify,post"
-                +"&client_id=" + encodeURIComponent("{{.Slack.ClientId}}")
-                +"&redirect_uri=" + encodeURIComponent("{{.Slack.RedirectUri}}");
+                +"&client_id=" + encodeURIComponent("{{.Configuration.Slack.ClientId}}")
+                +"&redirect_uri=" + encodeURIComponent("{{.Configuration.Slack.RedirectUri}}");
         }          
         function registration_success(state) {
           document.location.href="/"
@@ -425,7 +425,7 @@
         (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
         m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
         })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-        ga('create', '{{.GoogleTrackingId}}', 'auto');
+        ga('create', '{{.Configuration.GoogleTrackingId}}', 'auto');
         ga('require', 'linkid', 'linkid.js');
         ga('require', 'displayfeatures');
         ga('send', 'pageview');

@@ -45,6 +45,7 @@ type ChangedFile struct {
 	LastModifyingUser User             `json:"lastModifyingUser"`
 	AlternateLink     string           `json:"alternateLink"`
 	MimeType          string           `json:"mimeType"`
+	OwnerNames        []string         `json:"ownerNames"`
 	CreatedDate       google.Timestamp `json:"createdDate"`
 	ModifiedDate      google.Timestamp `json:"modifiedDate"`
 	SharedWithMeDate  google.Timestamp `json:"sharedWithMeDate"`
@@ -80,7 +81,7 @@ func (t *ChangeItem) updateLastAction(timeRef time.Time) {
 		t.LastAction = Deleted
 		return
 	}
-	if f.CreatedDate.Gte(f.ModifiedDate, f.SharedWithMeDate, threshold) {
+	if f.CreatedDate.Gte(f.ModifiedDate, f.SharedWithMeDate, threshold) && (len(t.File.OwnerNames) < 1 || t.File.OwnerNames[0] == t.File.LastModifyingUser.DisplayName) {
 		t.LastAction = Created
 		return
 	}
@@ -132,7 +133,7 @@ func query(client *http.Client, state *State, accessToken string) (google.Status
 	if state.LargestChangeId == 0 {
 		q.Set("fields", "largestChangeId")
 	} else {
-		q.Set("fields", "largestChangeId,items(deleted,file(explicitlyTrashed,alternateLink,mimeType,createdDate,modifiedDate,sharedWithMeDate,title,lastModifyingUser(displayName,emailAddress)))")
+		q.Set("fields", "largestChangeId,items(deleted,file(explicitlyTrashed,alternateLink,mimeType,createdDate,modifiedDate,sharedWithMeDate,title,ownerNames,lastModifyingUser(displayName,emailAddress)))")
 		q.Set("startChangeId", strconv.FormatUint(state.LargestChangeId+1, 10))
 	}
 	q.Set("includeDeleted", "true")

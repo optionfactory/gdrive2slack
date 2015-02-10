@@ -22,7 +22,7 @@ type ErrResponse struct {
 	Error string `json:"error"`
 }
 
-func ServeHttp(client *http.Client, registerChannel chan *SubscriptionAndAccessToken, configuration *Configuration) {
+func ServeHttp(client *http.Client, registerChannel chan *SubscriptionAndAccessToken, configuration *Configuration, version string) {
 	r := martini.NewRouter()
 	mr := martini.New()
 	mr.Use(martini.Recovery())
@@ -34,8 +34,12 @@ func ServeHttp(client *http.Client, registerChannel chan *SubscriptionAndAccessT
 	m := &martini.ClassicMartini{mr, r}
 	m.Use(render.Renderer())
 
+	indexData := make(map[string]interface{})
+	indexData["Configuration"] = configuration
+	indexData["Version"] = version
+
 	m.Get("/", func(renderer render.Render, req *http.Request) {
-		renderer.HTML(200, "index", configuration)
+		renderer.HTML(200, "index", indexData)
 	})
 	m.Put("/", func(renderer render.Render, req *http.Request) {
 		decoder := json.NewDecoder(req.Body)

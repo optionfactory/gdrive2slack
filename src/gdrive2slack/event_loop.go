@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func task(logger *Logger, client *http.Client, discardChannel chan string, waitGroup *sync.WaitGroup, configuration *google.OauthConfiguration, subscription *Subscription, userState *UserState) {
+func task(logger *Logger, client *http.Client, discardChannel chan string, waitGroup *sync.WaitGroup, configuration *google.OauthConfiguration, subscription *Subscription, userState *UserState, version string) {
 	email := subscription.GoogleUserInfo.Email
 	slackUser := subscription.SlackUserInfo.User
 	defer func() {
@@ -42,9 +42,9 @@ func task(logger *Logger, client *http.Client, discardChannel chan string, waitG
 	}
 	if len(userState.Gdrive.ChangeSet) > 0 {
 		logger.Info("[%s/%s] @%v %v changes", email, slackUser, userState.Gdrive.LargestChangeId, len(userState.Gdrive.ChangeSet))
-		message := CreateSlackMessage(subscription, userState)
+		message := CreateSlackMessage(subscription, userState, version)
 		status, err := slack.PostMessage(client, message, subscription.SlackAccessToken)
-		if status == slack.NotAuthed || status == slack.InvalidAuth || status == slack.AccountInactive {
+		if status == slack.NotAuthed || status == slack.InvalidAuth || status == slack.AccountInactive || status == slack.TokenRevoked {
 			panic(err)
 		}
 		if status != slack.Ok {
@@ -54,7 +54,7 @@ func task(logger *Logger, client *http.Client, discardChannel chan string, waitG
 	}
 }
 
-func EventLoop(oauthConf *OauthConfiguration, logger *Logger, client *http.Client, registerChannel chan *SubscriptionAndAccessToken, discardChannel chan string, signalsChannel chan os.Signal) {
+func EventLoop(oauthConf *OauthConfiguration, logger *Logger, client *http.Client, registerChannel chan *SubscriptionAndAccessToken, discardChannel chan string, signalsChannel chan os.Signal, version string) {
 	subscriptionsFileName := "subscriptions.json"
 	userStates, subscriptions, err := LoadSubscriptions(subscriptionsFileName)
 	if err != nil {
@@ -88,7 +88,7 @@ func EventLoop(oauthConf *OauthConfiguration, logger *Logger, client *http.Clien
 			lastLoopTime = time.Now()
 			for k, subscription := range subscriptions {
 				waitGroup.Add(1)
-				go task(logger, client, discardChannel, &waitGroup, oauthConf.Google, subscription, userStates[k])
+				go task(logger, client, discardChannel, &waitGroup, oauthConf.Google, subscription, userStates[k], version)
 			}
 			waitGroup.Wait()
 			logger.Info("Served %d clients", len(subscriptions))
