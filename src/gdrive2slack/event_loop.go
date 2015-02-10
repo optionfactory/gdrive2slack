@@ -1,6 +1,7 @@
 package gdrive2slack
 
 import (
+	"fmt"
 	"github.com/optionfactory/gdrive2slack/google"
 	"github.com/optionfactory/gdrive2slack/google/drive"
 	"github.com/optionfactory/gdrive2slack/slack"
@@ -50,7 +51,18 @@ func task(logger *Logger, client *http.Client, discardChannel chan string, waitG
 		if status != slack.Ok {
 			logger.Warning("[%s/%s] %s", email, slackUser, err)
 		}
-
+		if status == slack.ChannelNotFound {
+			nonExistentChannel := message.Channel
+			message.Channel = "@" + slackUser
+			message.Text = fmt.Sprintf("Hey <@%s|%s>, something is wrong: we can't find the slack channel %s: you should either create or <%s|change it>. Here is what happened in the meantime:", slackUser, subscription.SlackUserInfo.UserId, nonExistentChannel, configuration.RedirectUri)
+			status, err = slack.PostMessage(client, subscription.SlackAccessToken, message)
+			if status == slack.NotAuthed || status == slack.InvalidAuth || status == slack.AccountInactive || status == slack.TokenRevoked {
+				panic(err)
+			}
+			if status != slack.Ok {
+				logger.Warning("[%s/%s] %s", email, slackUser, err)
+			}
+		}
 	}
 }
 
