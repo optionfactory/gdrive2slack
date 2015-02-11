@@ -24,7 +24,7 @@ body { color: #333;}
 .contacts li { line-height: 32px; margin-bottom: 10px;}
 .contacts li i {margin-right: 15px; color: #3D425E; vertical-align: middle;}
 .ads { margin-top: 20px; }
-
+.wide { max-width: 100%;}
 footer {text-align: center; margin-top: 50px;}
 footer .logo-left {color:#2170b8;}
 footer .logo-right {color: #808080;}
