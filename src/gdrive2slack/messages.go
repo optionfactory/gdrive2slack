@@ -52,7 +52,7 @@ func CreateSlackMessage(subscription *Subscription, userState *UserState, versio
 	return &slack.Message{
 		Channel:     subscription.Channel,
 		Username:    "Google Drive",
-		Text:        fmt.Sprintf("Activity on gdrive (configured by <@%s|%s>)", subscription.SlackUserInfo.UserId, subscription.SlackUserInfo.User),
+		Text:        fmt.Sprintf("Activity on gdrive"),
 		IconUrl:     fmt.Sprintf("http://gdrive2slack.optionfactory.net/gdrive2slack.png?ck=%s", version),
 		Attachments: attachments,
 	}
