@@ -57,3 +57,23 @@ func CreateSlackMessage(subscription *Subscription, userState *UserState, versio
 		Attachments: attachments,
 	}
 }
+
+func CreateSlackWelcomeMessage(channel string, redirectUri string, sUserInfo *slack.UserInfo, version string) *slack.Message {
+	return &slack.Message{
+		Channel:  channel,
+		Username: "Google Drive",
+		Text:     fmt.Sprintf("A <%s|GDrive2Slack> integration has been configured by <@%s|%s>. Activities on Google Drive documents will be notified here.", redirectUri, sUserInfo.UserId, sUserInfo.User),
+		IconUrl:  fmt.Sprintf("http://gdrive2slack.optionfactory.net/gdrive2slack.png?ck=%s", version),
+	}
+}
+
+func CreateSlackUnknownChannelMessage(subscription *Subscription, redirectUri string, source *slack.Message) *slack.Message {
+	nonExistentChannel := source.Channel
+	return &slack.Message{
+		Channel:     "@" + subscription.SlackUserInfo.User,
+		Username:    "Google Drive",
+		Text:        fmt.Sprintf("Hey <@%s|%s>, something is wrong: we can't find the slack channel %s: you should either create or <%s|change it>. Here is what happened in the meantime:", subscription.SlackUserInfo.User, subscription.SlackUserInfo.UserId, nonExistentChannel, redirectUri),
+		IconUrl:     source.IconUrl,
+		Attachments: source.Attachments,
+	}
+}

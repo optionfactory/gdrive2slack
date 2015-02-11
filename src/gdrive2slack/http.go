@@ -2,7 +2,6 @@ package gdrive2slack
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/go-martini/martini"
 	"github.com/martini-contrib/render"
 	"github.com/optionfactory/gdrive2slack/google"
@@ -41,12 +40,12 @@ func ServeHttp(client *http.Client, registerChannel chan *SubscriptionAndAccessT
 		renderer.HTML(200, "index", indexData)
 	})
 	m.Put("/", func(renderer render.Render, req *http.Request) {
-		handleSubscriptionRequest(client, registerChannel, configuration, renderer, req)
+		handleSubscriptionRequest(client, registerChannel, configuration, version, renderer, req)
 	})
 	m.RunOnAddr(configuration.BindAddress)
 }
 
-func handleSubscriptionRequest(client *http.Client, registerChannel chan *SubscriptionAndAccessToken, configuration *Configuration, renderer render.Render, req *http.Request) {
+func handleSubscriptionRequest(client *http.Client, registerChannel chan *SubscriptionAndAccessToken, configuration *Configuration, version string, renderer render.Render, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
 	var r Request
 	err := decoder.Decode(&r)
@@ -86,12 +85,7 @@ func handleSubscriptionRequest(client *http.Client, registerChannel chan *Subscr
 		return
 	}
 
-	cstatus, err := slack.PostMessage(client, slackAccessToken, &slack.Message{
-		Channel:  r.Channel,
-		Username: "Google Drive",
-		Text:     fmt.Sprintf("A <%s|GDrive2Slack> integration has been configured by <@%s|%s>. Activities on Google Drive documents will be notified here.", configuration.Google.RedirectUri, sUserInfo.UserId, sUserInfo.User),
-		IconUrl:  "http://gdrive2slack.optionfactory.net/gdrive2slack.png",
-	})
+	cstatus, err := slack.PostMessage(client, slackAccessToken, CreateSlackWelcomeMessage(r.Channel, configuration.Google.RedirectUri, sUserInfo, version))
 
 	registerChannel <- &SubscriptionAndAccessToken{
 		Subscription: &Subscription{
