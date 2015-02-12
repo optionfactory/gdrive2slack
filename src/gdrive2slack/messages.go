@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/optionfactory/gdrive2slack/google/drive"
 	"github.com/optionfactory/gdrive2slack/slack"
+	"strings"
+	"unicode/utf8"
 )
 
 var actionColors = []string{
@@ -14,12 +16,29 @@ var actionColors = []string{
 	drive.Viewed:   "#ccccff",
 }
 
+func infixZeroWidthSpace(source string) string {
+	if utf8.RuneCountInString(source) < 2 {
+		return source
+	}
+	firstRune, width := utf8.DecodeRuneInString(source)
+	rest := source[width:]
+	return string(firstRune) + "\u200B" + rest
+}
+
+func preventNotification(source string) string {
+	split := strings.Split(source, " ")
+	for i, word := range split {
+		split[i] = infixZeroWidthSpace(word)
+	}
+	return strings.Join(split, " ")
+}
+
 func CreateSlackAttachment(change *drive.ChangeItem) *slack.Attachment {
 	var editor string
 	if len(change.File.LastModifyingUser.EmailAddress) > 0 && len(change.File.LastModifyingUser.DisplayName) > 0 {
-		editor = fmt.Sprintf("<mailto:%s|%s>", change.File.LastModifyingUser.EmailAddress, change.File.LastModifyingUser.DisplayName)
+		editor = fmt.Sprintf("<mailto:%s|%s>", change.File.LastModifyingUser.EmailAddress, preventNotification(change.File.LastModifyingUser.DisplayName))
 	} else if len(change.File.LastModifyingUser.DisplayName) > 0 {
-		editor = change.File.LastModifyingUser.DisplayName
+		editor = preventNotification(change.File.LastModifyingUser.DisplayName)
 	} else {
 		editor = "Unknown"
 	}
@@ -52,7 +71,7 @@ func CreateSlackMessage(subscription *Subscription, userState *UserState, versio
 	return &slack.Message{
 		Channel:     subscription.Channel,
 		Username:    "Google Drive",
-		Text:        fmt.Sprintf("Activity on gdrive"),
+		Text:        fmt.Sprintf("Activity on gdrive (configured by @%s)", preventNotification(subscription.SlackUserInfo.User)),
 		IconUrl:     fmt.Sprintf("http://gdrive2slack.optionfactory.net/gdrive2slack.png?ck=%s", version),
 		Attachments: attachments,
 	}

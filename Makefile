@@ -5,7 +5,7 @@ VERSION=$(shell git describe --always)
 SHELL = /bin/bash
 local: FORCE
 	@echo spawning docker container
-	docker run --rm=true \
+	@docker run --rm=true \
 		-v ${PWD}/src:/go/src/github.com/optionfactory/gdrive2slack/ \
 		-v ${PWD}/Makefile:/go/Makefile \
 		-v ${PWD}/bin:/go/bin \
@@ -57,6 +57,7 @@ $(PROJECT)-%-arm: GOARCH = arm
 $(PROJECT)-%: format *.go
 	@echo building for $(GOOS):$(GOARCH)
 	@GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go get -installsuffix netgo ./...
+	@GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go test -a -tags netgo -installsuffix netgo -ldflags "-X main.version $(VERSION)" ./...
 	@GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go install -a -tags netgo -installsuffix netgo -ldflags "-X main.version $(VERSION)"
 	@if [ "${GOOS}" == "linux" -a "${GOARCH}" == "amd64" ]; then \
 		mv "/go/bin/${PROJECT}${EXT}" "/go/bin/${PROJECT}-${GOOS}-${GOARCH}${EXT}"; \
