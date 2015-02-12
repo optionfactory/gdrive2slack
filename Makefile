@@ -57,7 +57,9 @@ $(PROJECT)-%-arm: GOARCH = arm
 $(PROJECT)-%: format *.go
 	@echo building for $(GOOS):$(GOARCH)
 	@GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go get -installsuffix netgo ./...
-	@GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go test -a -tags netgo -installsuffix netgo -ldflags "-X main.version $(VERSION)" ./...
+	@if [ "${GOOS}" == "linux" -a "${GOARCH}" == "amd64" ]; then \
+		GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go test -a -tags netgo -installsuffix netgo -ldflags "-X main.version $(VERSION)" ./... \
+	fi
 	@GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go install -a -tags netgo -installsuffix netgo -ldflags "-X main.version $(VERSION)"
 	@if [ "${GOOS}" == "linux" -a "${GOARCH}" == "amd64" ]; then \
 		mv "/go/bin/${PROJECT}${EXT}" "/go/bin/${PROJECT}-${GOOS}-${GOARCH}${EXT}"; \
