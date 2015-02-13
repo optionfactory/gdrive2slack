@@ -3,6 +3,7 @@ package gdrive2slack
 import (
 	"github.com/optionfactory/gdrive2slack/google"
 	"github.com/optionfactory/gdrive2slack/google/drive"
+	"github.com/optionfactory/gdrive2slack/mailchimp"
 	"github.com/optionfactory/gdrive2slack/slack"
 	"net/http"
 	"os"
@@ -10,7 +11,7 @@ import (
 	"time"
 )
 
-func task(logger *Logger, client *http.Client, discardChannel chan string, waitGroup *sync.WaitGroup, configuration *google.OauthConfiguration, subscription *Subscription, userState *UserState, version string) {
+func task(logger *Logger, client *http.Client, discardChannel chan string, waitGroup *sync.WaitGroup, configuration *Configuration, subscription *Subscription, userState *UserState, version string) {
 	email := subscription.GoogleUserInfo.Email
 	slackUser := subscription.SlackUserInfo.User
 	defer func() {
@@ -24,7 +25,7 @@ func task(logger *Logger, client *http.Client, discardChannel chan string, waitG
 	var err error
 	if userState.Gdrive.LargestChangeId == 0 {
 
-		userState.GoogleAccessToken, err = google.DoWithAccessToken(configuration, client, subscription.GoogleRefreshToken, userState.GoogleAccessToken, func(at string) (google.StatusCode, error) {
+		userState.GoogleAccessToken, err = google.DoWithAccessToken(configuration.Google, client, subscription.GoogleRefreshToken, userState.GoogleAccessToken, func(at string) (google.StatusCode, error) {
 			return drive.LargestChangeId(client, userState.Gdrive, at)
 		})
 		if err != nil {
@@ -33,7 +34,7 @@ func task(logger *Logger, client *http.Client, discardChannel chan string, waitG
 		return
 	}
 
-	userState.GoogleAccessToken, err = google.DoWithAccessToken(configuration, client, subscription.GoogleRefreshToken, userState.GoogleAccessToken, func(at string) (google.StatusCode, error) {
+	userState.GoogleAccessToken, err = google.DoWithAccessToken(configuration.Google, client, subscription.GoogleRefreshToken, userState.GoogleAccessToken, func(at string) (google.StatusCode, error) {
 		return drive.DetectChanges(client, userState.Gdrive, at)
 	})
 	if err != nil {
@@ -51,7 +52,7 @@ func task(logger *Logger, client *http.Client, discardChannel chan string, waitG
 			logger.Warning("[%s/%s] %s", email, slackUser, err)
 		}
 		if status == slack.ChannelNotFound {
-			status, err = slack.PostMessage(client, subscription.SlackAccessToken, CreateSlackUnknownChannelMessage(subscription, configuration.RedirectUri, message))
+			status, err = slack.PostMessage(client, subscription.SlackAccessToken, CreateSlackUnknownChannelMessage(subscription, configuration.Google.RedirectUri, message))
 			if status == slack.NotAuthed || status == slack.InvalidAuth || status == slack.AccountInactive || status == slack.TokenRevoked {
 				panic(err)
 			}
@@ -62,11 +63,11 @@ func task(logger *Logger, client *http.Client, discardChannel chan string, waitG
 	}
 }
 
-func EventLoop(oauthConf *OauthConfiguration, logger *Logger, client *http.Client, registerChannel chan *SubscriptionAndAccessToken, discardChannel chan string, signalsChannel chan os.Signal, version string) {
+func EventLoop(configuration *Configuration, logger *Logger, client *http.Client, registerChannel chan *SubscriptionAndAccessToken, discardChannel chan string, signalsChannel chan os.Signal, version string) {
 	subscriptionsFileName := "subscriptions.json"
 	userStates, subscriptions, err := LoadSubscriptions(subscriptionsFileName)
 	if err != nil {
-		logger.Error("unreadable subscriptions file", err)
+		logger.Error("unreadable subscriptions file: %s", err)
 		os.Exit(1)
 	}
 	var waitGroup sync.WaitGroup
@@ -82,13 +83,34 @@ func EventLoop(oauthConf *OauthConfiguration, logger *Logger, client *http.Clien
 		}
 		select {
 		case subscriptionAndAccessToken := <-registerChannel:
-			logger.Info("+subscription: %s", subscriptionAndAccessToken.Subscription.GoogleUserInfo.Email)
+			email := subscriptionAndAccessToken.Subscription.GoogleUserInfo.Email
+			logger.Info("+subscription: %s", email)
 			AddSubscription(userStates, subscriptions, subscriptionAndAccessToken.Subscription, subscriptionAndAccessToken.GoogleAccessToken)
 			SaveSubscriptions(subscriptions, subscriptionsFileName)
+			go func() {
+				if configuration.Mailchimp.IsMailchimpConfigured() {
+					error := mailchimp.Subscribe(configuration.Mailchimp, client, &mailchimp.SubscriptionRequest{
+						Email:     email,
+						FirstName: subscriptionAndAccessToken.Subscription.GoogleUserInfo.GivenName,
+						LastName:  subscriptionAndAccessToken.Subscription.GoogleUserInfo.FamilyName,
+					})
+					if error != nil {
+						logger.Warning("mailchimp/subscribe@%s %s", email, error)
+					}
+				}
+			}()
 		case email := <-discardChannel:
 			logger.Info("-subscription: %s", email)
 			RemoveSubscription(userStates, subscriptions, email)
 			SaveSubscriptions(subscriptions, subscriptionsFileName)
+			go func() {
+				if configuration.Mailchimp.IsMailchimpConfigured() {
+					error := mailchimp.Unsubscribe(configuration.Mailchimp, client, email)
+					if error != nil {
+						logger.Warning("mailchimp/unsubscribe@%s %s", email, error)
+					}
+				}
+			}()
 		case s := <-signalsChannel:
 			logger.Info("Exiting: got signal %v", s)
 			os.Exit(0)
@@ -96,7 +118,7 @@ func EventLoop(oauthConf *OauthConfiguration, logger *Logger, client *http.Clien
 			lastLoopTime = time.Now()
 			for k, subscription := range subscriptions {
 				waitGroup.Add(1)
-				go task(logger, client, discardChannel, &waitGroup, oauthConf.Google, subscription, userStates[k], version)
+				go task(logger, client, discardChannel, &waitGroup, configuration, subscription, userStates[k], version)
 			}
 			waitGroup.Wait()
 			logger.Info("Served %d clients", len(subscriptions))

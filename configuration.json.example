@@ -10,5 +10,12 @@
 		"client_id": "<SLACK_CLIENT_ID_HERE>",
 		"client_secret": "<SLACK_CLIENT_SECRET_HERE>",
 		"redirect_uri": "<YOUR_REDIRECT_URI_HERE>"
+	},
+	"mailchimp": {
+		"api_key": "<API_KEY_HERE>",
+		"data_center": "<MAILCHIMP_DATACENTER_HERE>",
+		"list_id": "",
+		"group_title": "<GROUP_TITLE>",
+		"group_name": "<GROUP_NAME>"
 	}
 }

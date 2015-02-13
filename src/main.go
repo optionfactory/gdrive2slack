@@ -34,7 +34,7 @@ func main() {
 		Timeout: time.Duration(15) * time.Second,
 	}
 
-	go gdrive2slack.EventLoop(configuration.OauthConfiguration, logger, client, registerChannel, discardChannel, signals, version)
+	go gdrive2slack.EventLoop(configuration, logger, client, registerChannel, discardChannel, signals, version)
 
 	gdrive2slack.ServeHttp(client, registerChannel, configuration, version)
 }
