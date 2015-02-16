@@ -68,7 +68,6 @@ func EventLoop(env *Environment) {
 		env.Logger.Error("unreadable subscriptions file: %s", err)
 		os.Exit(1)
 	}
-	var waitGroup sync.WaitGroup
 
 	lastLoopTime := time.Time{}
 	waitFor := time.Duration(0)
@@ -81,42 +80,24 @@ func EventLoop(env *Environment) {
 		}
 		select {
 		case subscriptionAndAccessToken := <-env.RegisterChannel:
-			email := subscriptionAndAccessToken.Subscription.GoogleUserInfo.Email
 			subscription := subscriptionAndAccessToken.Subscription
 			subscriptions.Add(subscription, subscriptionAndAccessToken.GoogleAccessToken)
-			if subscriptions.Contains(email) {
-				env.Logger.Info("*subscription: %s '%s' '%s'", email, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
+			if subscriptions.Contains(subscription.GoogleUserInfo.Email) {
+				env.Logger.Info("*subscription: %s '%s' '%s'", subscription.GoogleUserInfo.Email, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
 			} else {
-				env.Logger.Info("+subscription: %s '%s' '%s'", email, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
-				go func() {
-					if env.Configuration.Mailchimp.IsMailchimpConfigured() {
-						error := mailchimp.Subscribe(env.Configuration.Mailchimp, env.HttpClient, &mailchimp.SubscriptionRequest{
-							Email:     email,
-							FirstName: subscription.GoogleUserInfo.GivenName,
-							LastName:  subscription.GoogleUserInfo.FamilyName,
-						})
-						if error != nil {
-							env.Logger.Warning("mailchimp/subscribe@%s %s", email, error)
-						}
-					}
-				}()
+				env.Logger.Info("+subscription: %s '%s' '%s'", subscription.GoogleUserInfo.Email, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
+				go mailchimpRegistrationTask(env, subscription)
 			}
 		case email := <-env.DiscardChannel:
 			subscription := subscriptions.Remove(email)
-			env.Logger.Info("-subscription: %s '%s' '%s'", email, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
-			go func() {
-				if env.Configuration.Mailchimp.IsMailchimpConfigured() {
-					error := mailchimp.Unsubscribe(env.Configuration.Mailchimp, env.HttpClient, email)
-					if error != nil {
-						env.Logger.Warning("mailchimp/unsubscribe@%s %s", email, error)
-					}
-				}
-			}()
+			env.Logger.Info("-subscription: %s '%s' '%s'", subscription.GoogleUserInfo.Email, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
+			go mailchimpDeregistrationTask(env, subscription)
 		case s := <-env.SignalsChannel:
 			env.Logger.Info("Exiting: got signal %v", s)
 			os.Exit(0)
 		case <-time.After(waitFor):
 			lastLoopTime = time.Now()
+			var waitGroup sync.WaitGroup
 			for k, subscription := range subscriptions.Info {
 				waitGroup.Add(1)
 				go task(env, &waitGroup, subscription, subscriptions.States[k])
@@ -124,5 +105,29 @@ func EventLoop(env *Environment) {
 			waitGroup.Wait()
 			env.Logger.Info("Served %d clients", len(subscriptions.Info))
 		}
+	}
+}
+
+func mailchimpRegistrationTask(env *Environment, subscription *Subscription) {
+	if !env.Configuration.Mailchimp.IsMailchimpConfigured() {
+		return
+	}
+	error := mailchimp.Subscribe(env.Configuration.Mailchimp, env.HttpClient, &mailchimp.SubscriptionRequest{
+		Email:     subscription.GoogleUserInfo.Email,
+		FirstName: subscription.GoogleUserInfo.GivenName,
+		LastName:  subscription.GoogleUserInfo.FamilyName,
+	})
+	if error != nil {
+		env.Logger.Warning("mailchimp/subscribe@%s %s", subscription.GoogleUserInfo.Email, error)
+	}
+}
+
+func mailchimpDeregistrationTask(env *Environment, subscription *Subscription) {
+	if !env.Configuration.Mailchimp.IsMailchimpConfigured() {
+		return
+	}
+	error := mailchimp.Unsubscribe(env.Configuration.Mailchimp, env.HttpClient, subscription.GoogleUserInfo.Email)
+	if error != nil {
+		env.Logger.Warning("mailchimp/unsubscribe@%s %s", subscription.GoogleUserInfo.Email, error)
 	}
 }

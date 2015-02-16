@@ -8,30 +8,6 @@ import (
 	"net/http"
 )
 
-type SubscriptionRequest struct {
-	Email     string
-	FirstName string
-	LastName  string
-}
-
-type subscriptionRequest struct {
-	ApiKey         string    `json:"apikey"`
-	ListId         string    `json:"id"`
-	Email          emailInfo `json:"email"`
-	MergeVars      mergeVars `json:"merge_vars"`
-	SendWelcome    bool      `json:"send_welcome"`
-	DoubleOptin    bool      `json:"double_optin"`
-	UpdateExisting bool      `json:"update_existing"`
-}
-
-type removalRequest struct {
-	ApiKey       string    `json:"apikey"`
-	ListId       string    `json:"id"`
-	Email        emailInfo `json:"email"`
-	SendGoodbye  bool      `json:"send_goodbye"`
-	DeleteMember bool      `json:"delete_member"`
-}
-
 type ErrorResponse struct {
 	Status  string `json:"status"`
 	Code    int    `json:"code"`
@@ -64,22 +40,9 @@ func (self *Configuration) IsMailchimpConfigured() bool {
 	return self.ApiKey != "" && self.DataCenter != "" && self.ListId != ""
 }
 
-func Subscribe(configuration *Configuration, client *http.Client, subRequest *SubscriptionRequest) error {
-	payload, _ := json.Marshal(&subscriptionRequest{
-		ApiKey: configuration.ApiKey,
-		ListId: configuration.ListId,
-		Email: emailInfo{
-			Email: subRequest.Email,
-		},
-		MergeVars: mergeVars{
-			FirstName: subRequest.FirstName,
-			LastName:  subRequest.LastName,
-		},
-		SendWelcome:    false,
-		DoubleOptin:    false,
-		UpdateExisting: true,
-	})
-	req, _ := http.NewRequest("POST", fmt.Sprintf("https://%s.api.mailchimp.com/2.0/lists/subscribe", configuration.DataCenter), bytes.NewBuffer(payload))
+func mailchimpCall(configuration *Configuration, client *http.Client, api string, request interface{}) error {
+	payload, _ := json.Marshal(&request)
+	req, _ := http.NewRequest("POST", fmt.Sprintf("https://%s.api.mailchimp.com/2.0/%s", configuration.DataCenter, api), bytes.NewBuffer(payload))
 	req.Header.Add("Content-Type", "application/json")
 	response, err := client.Do(req)
 	if err != nil {
@@ -97,8 +60,49 @@ func Subscribe(configuration *Configuration, client *http.Client, subRequest *Su
 	return nil
 }
 
+type SubscriptionRequest struct {
+	Email     string
+	FirstName string
+	LastName  string
+}
+
+type subscriptionRequest struct {
+	ApiKey         string    `json:"apikey"`
+	ListId         string    `json:"id"`
+	Email          emailInfo `json:"email"`
+	MergeVars      mergeVars `json:"merge_vars"`
+	SendWelcome    bool      `json:"send_welcome"`
+	DoubleOptin    bool      `json:"double_optin"`
+	UpdateExisting bool      `json:"update_existing"`
+}
+
+func Subscribe(configuration *Configuration, client *http.Client, subRequest *SubscriptionRequest) error {
+	return mailchimpCall(configuration, client, "lists/subscribe", &subscriptionRequest{
+		ApiKey: configuration.ApiKey,
+		ListId: configuration.ListId,
+		Email: emailInfo{
+			Email: subRequest.Email,
+		},
+		MergeVars: mergeVars{
+			FirstName: subRequest.FirstName,
+			LastName:  subRequest.LastName,
+		},
+		SendWelcome:    false,
+		DoubleOptin:    false,
+		UpdateExisting: true,
+	})
+}
+
+type removalRequest struct {
+	ApiKey       string    `json:"apikey"`
+	ListId       string    `json:"id"`
+	Email        emailInfo `json:"email"`
+	SendGoodbye  bool      `json:"send_goodbye"`
+	DeleteMember bool      `json:"delete_member"`
+}
+
 func Unsubscribe(configuration *Configuration, client *http.Client, email string) error {
-	payload, _ := json.Marshal(&removalRequest{
+	return mailchimpCall(configuration, client, "lists/unsubscribe", &removalRequest{
 		ApiKey: configuration.ApiKey,
 		ListId: configuration.ListId,
 		Email: emailInfo{
@@ -107,20 +111,4 @@ func Unsubscribe(configuration *Configuration, client *http.Client, email string
 		SendGoodbye:  false,
 		DeleteMember: false,
 	})
-	req, _ := http.NewRequest("POST", fmt.Sprintf("https://%s.api.mailchimp.com/2.0/lists/unsubscribe", configuration.DataCenter), bytes.NewBuffer(payload))
-	req.Header.Add("Content-Type", "application/json")
-	response, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer response.Body.Close()
-	if response.StatusCode >= 400 {
-		errorResponse := &ErrorResponse{}
-		err = json.NewDecoder(response.Body).Decode(errorResponse)
-		if err == nil {
-			err = errors.New(fmt.Sprintf("%s: %s", errorResponse.Name, errorResponse.Message))
-		}
-		return err
-	}
-	return nil
 }
