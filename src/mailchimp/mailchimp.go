@@ -58,8 +58,6 @@ type Configuration struct {
 	ApiKey     string `json:"api_key"`
 	DataCenter string `json:"data_center"`
 	ListId     string `json:"list_id"`
-	GroupTitle string `json:"group_title"`
-	GroupName  string `json:"group_name"`
 }
 
 func (self *Configuration) IsMailchimpConfigured() bool {
@@ -67,16 +65,6 @@ func (self *Configuration) IsMailchimpConfigured() bool {
 }
 
 func Subscribe(configuration *Configuration, client *http.Client, subRequest *SubscriptionRequest) error {
-	var groupings = make([]grouping, 0)
-	if configuration.GroupTitle != "" && configuration.GroupName != "" {
-		groupings = append(groupings, grouping{
-			Title: configuration.GroupTitle,
-			Names: []string{
-				configuration.GroupName,
-			},
-		})
-	}
-
 	payload, _ := json.Marshal(&subscriptionRequest{
 		ApiKey: configuration.ApiKey,
 		ListId: configuration.ListId,
@@ -86,7 +74,6 @@ func Subscribe(configuration *Configuration, client *http.Client, subRequest *Su
 		MergeVars: mergeVars{
 			FirstName: subRequest.FirstName,
 			LastName:  subRequest.LastName,
-			Groupings: groupings,
 		},
 		SendWelcome:    false,
 		DoubleOptin:    false,
