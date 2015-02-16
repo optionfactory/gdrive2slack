@@ -109,6 +109,7 @@ func EventLoop(env *Environment) {
 }
 
 func mailchimpRegistrationTask(env *Environment, subscription *Subscription) {
+	defer mailchimpRecover(env, subscription, "registration")
 	if !env.Configuration.Mailchimp.IsMailchimpConfigured() {
 		return
 	}
@@ -123,11 +124,18 @@ func mailchimpRegistrationTask(env *Environment, subscription *Subscription) {
 }
 
 func mailchimpDeregistrationTask(env *Environment, subscription *Subscription) {
+	defer mailchimpRecover(env, subscription, "deregistration")
 	if !env.Configuration.Mailchimp.IsMailchimpConfigured() {
 		return
 	}
 	error := mailchimp.Unsubscribe(env.Configuration.Mailchimp, env.HttpClient, subscription.GoogleUserInfo.Email)
 	if error != nil {
 		env.Logger.Warning("mailchimp/unsubscribe@%s %s", subscription.GoogleUserInfo.Email, error)
+	}
+}
+
+func mailchimpRecover(env *Environment, subscription *Subscription, task string) {
+	if r := recover(); r != nil {
+		env.Logger.Warning("[%s/%s] unexpected error in mailchimp %s task: %v", subscription.GoogleUserInfo.Email, subscription.SlackUserInfo.User, task, r)
 	}
 }
