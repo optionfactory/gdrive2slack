@@ -20,7 +20,7 @@ type ErrResponse struct {
 	Error string `json:"error"`
 }
 
-func ServeHttp(client *http.Client, registerChannel chan *SubscriptionAndAccessToken, configuration *Configuration, version string) {
+func ServeHttp(env *Environment) {
 	r := martini.NewRouter()
 	mr := martini.New()
 	mr.Use(martini.Recovery())
@@ -32,20 +32,16 @@ func ServeHttp(client *http.Client, registerChannel chan *SubscriptionAndAccessT
 	m := &martini.ClassicMartini{mr, r}
 	m.Use(render.Renderer())
 
-	indexData := make(map[string]interface{})
-	indexData["Configuration"] = configuration
-	indexData["Version"] = version
-
 	m.Get("/", func(renderer render.Render, req *http.Request) {
-		renderer.HTML(200, "index", indexData)
+		renderer.HTML(200, "index", env)
 	})
 	m.Put("/", func(renderer render.Render, req *http.Request) {
-		handleSubscriptionRequest(client, registerChannel, configuration, version, renderer, req)
+		handleSubscriptionRequest(env, renderer, req)
 	})
-	m.RunOnAddr(configuration.BindAddress)
+	m.RunOnAddr(env.Configuration.BindAddress)
 }
 
-func handleSubscriptionRequest(client *http.Client, registerChannel chan *SubscriptionAndAccessToken, configuration *Configuration, version string, renderer render.Render, req *http.Request) {
+func handleSubscriptionRequest(env *Environment, renderer render.Render, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
 	var r Request
 	err := decoder.Decode(&r)
@@ -64,30 +60,31 @@ func handleSubscriptionRequest(client *http.Client, registerChannel chan *Subscr
 	if r.Channel == "" {
 		r.Channel = "#general"
 	}
-	googleRefreshToken, googleAccessToken, status, err := google.NewAccessToken(configuration.Google, client, r.GoogleCode)
+	googleRefreshToken, googleAccessToken, status, err := google.NewAccessToken(env.Configuration.Google, env.HttpClient, r.GoogleCode)
 	if status != google.Ok {
 		renderer.JSON(500, &ErrResponse{err.Error()})
 		return
 	}
-	slackAccessToken, ostatus, err := slack.NewAccessToken(configuration.Slack, client, r.SlackCode)
+	slackAccessToken, ostatus, err := slack.NewAccessToken(env.Configuration.Slack, env.HttpClient, r.SlackCode)
 	if ostatus != slack.OauthOk {
 		renderer.JSON(500, &ErrResponse{err.Error()})
 		return
 	}
-	gUserInfo, status, err := userinfo.GetUserInfo(client, googleAccessToken)
+	gUserInfo, status, err := userinfo.GetUserInfo(env.HttpClient, googleAccessToken)
 	if status != google.Ok {
 		renderer.JSON(500, &ErrResponse{err.Error()})
 		return
 	}
-	sUserInfo, sstatus, err := slack.GetUserInfo(client, slackAccessToken)
+	sUserInfo, sstatus, err := slack.GetUserInfo(env.HttpClient, slackAccessToken)
 	if sstatus != slack.Ok {
 		renderer.JSON(500, &ErrResponse{err.Error()})
 		return
 	}
 
-	cstatus, err := slack.PostMessage(client, slackAccessToken, CreateSlackWelcomeMessage(r.Channel, configuration.Google.RedirectUri, sUserInfo, version))
+	welcomeMessage := CreateSlackWelcomeMessage(r.Channel, env.Configuration.Google.RedirectUri, sUserInfo, env.Version)
+	cstatus, err := slack.PostMessage(env.HttpClient, slackAccessToken, welcomeMessage)
 
-	registerChannel <- &SubscriptionAndAccessToken{
+	env.RegisterChannel <- &SubscriptionAndAccessToken{
 		Subscription: &Subscription{
 			r.Channel,
 			slackAccessToken,

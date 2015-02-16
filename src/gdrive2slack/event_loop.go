@@ -5,19 +5,18 @@ import (
 	"github.com/optionfactory/gdrive2slack/google/drive"
 	"github.com/optionfactory/gdrive2slack/mailchimp"
 	"github.com/optionfactory/gdrive2slack/slack"
-	"net/http"
 	"os"
 	"sync"
 	"time"
 )
 
-func task(logger *Logger, client *http.Client, discardChannel chan string, waitGroup *sync.WaitGroup, configuration *Configuration, subscription *Subscription, userState *UserState, version string) {
+func task(env *Environment, waitGroup *sync.WaitGroup, subscription *Subscription, userState *UserState) {
 	email := subscription.GoogleUserInfo.Email
 	slackUser := subscription.SlackUserInfo.User
 	defer func() {
 		if r := recover(); r != nil {
-			logger.Error("[%s/%s] removing handler. reason: %v", email, slackUser, r)
-			discardChannel <- email
+			env.Logger.Error("[%s/%s] removing handler. reason: %v", email, slackUser, r)
+			env.DiscardChannel <- email
 
 		}
 		waitGroup.Done()
@@ -25,49 +24,48 @@ func task(logger *Logger, client *http.Client, discardChannel chan string, waitG
 	var err error
 	if userState.Gdrive.LargestChangeId == 0 {
 
-		userState.GoogleAccessToken, err = google.DoWithAccessToken(configuration.Google, client, subscription.GoogleRefreshToken, userState.GoogleAccessToken, func(at string) (google.StatusCode, error) {
-			return drive.LargestChangeId(client, userState.Gdrive, at)
+		userState.GoogleAccessToken, err = google.DoWithAccessToken(env.Configuration.Google, env.HttpClient, subscription.GoogleRefreshToken, userState.GoogleAccessToken, func(at string) (google.StatusCode, error) {
+			return drive.LargestChangeId(env.HttpClient, userState.Gdrive, at)
 		})
 		if err != nil {
-			logger.Warning("[%s/%s] %s", email, slackUser, err)
+			env.Logger.Warning("[%s/%s] %s", email, slackUser, err)
 		}
 		return
 	}
 
-	userState.GoogleAccessToken, err = google.DoWithAccessToken(configuration.Google, client, subscription.GoogleRefreshToken, userState.GoogleAccessToken, func(at string) (google.StatusCode, error) {
-		return drive.DetectChanges(client, userState.Gdrive, at)
+	userState.GoogleAccessToken, err = google.DoWithAccessToken(env.Configuration.Google, env.HttpClient, subscription.GoogleRefreshToken, userState.GoogleAccessToken, func(at string) (google.StatusCode, error) {
+		return drive.DetectChanges(env.HttpClient, userState.Gdrive, at)
 	})
 	if err != nil {
-		logger.Warning("[%s/%s] %s", email, slackUser, err)
+		env.Logger.Warning("[%s/%s] %s", email, slackUser, err)
 		return
 	}
 	if len(userState.Gdrive.ChangeSet) > 0 {
-		logger.Info("[%s/%s] @%v %v changes", email, slackUser, userState.Gdrive.LargestChangeId, len(userState.Gdrive.ChangeSet))
-		message := CreateSlackMessage(subscription, userState, version)
-		status, err := slack.PostMessage(client, subscription.SlackAccessToken, message)
+		env.Logger.Info("[%s/%s] @%v %v changes", email, slackUser, userState.Gdrive.LargestChangeId, len(userState.Gdrive.ChangeSet))
+		message := CreateSlackMessage(subscription, userState, env.Version)
+		status, err := slack.PostMessage(env.HttpClient, subscription.SlackAccessToken, message)
 		if status == slack.NotAuthed || status == slack.InvalidAuth || status == slack.AccountInactive || status == slack.TokenRevoked {
 			panic(err)
 		}
 		if status != slack.Ok {
-			logger.Warning("[%s/%s] %s", email, slackUser, err)
+			env.Logger.Warning("[%s/%s] %s", email, slackUser, err)
 		}
 		if status == slack.ChannelNotFound {
-			status, err = slack.PostMessage(client, subscription.SlackAccessToken, CreateSlackUnknownChannelMessage(subscription, configuration.Google.RedirectUri, message))
+			status, err = slack.PostMessage(env.HttpClient, subscription.SlackAccessToken, CreateSlackUnknownChannelMessage(subscription, env.Configuration.Google.RedirectUri, message))
 			if status == slack.NotAuthed || status == slack.InvalidAuth || status == slack.AccountInactive || status == slack.TokenRevoked {
 				panic(err)
 			}
 			if status != slack.Ok {
-				logger.Warning("[%s/%s] %s", email, slackUser, err)
+				env.Logger.Warning("[%s/%s] %s", email, slackUser, err)
 			}
 		}
 	}
 }
 
-func EventLoop(configuration *Configuration, logger *Logger, client *http.Client, registerChannel chan *SubscriptionAndAccessToken, discardChannel chan string, signalsChannel chan os.Signal, version string) {
-	subscriptionsFileName := "subscriptions.json"
-	userStates, subscriptions, err := LoadSubscriptions(subscriptionsFileName)
+func EventLoop(env *Environment) {
+	subscriptions, err := LoadSubscriptions("subscriptions.json")
 	if err != nil {
-		logger.Error("unreadable subscriptions file: %s", err)
+		env.Logger.Error("unreadable subscriptions file: %s", err)
 		os.Exit(1)
 	}
 	var waitGroup sync.WaitGroup
@@ -82,46 +80,49 @@ func EventLoop(configuration *Configuration, logger *Logger, client *http.Client
 			waitFor = time.Duration(1) * time.Second
 		}
 		select {
-		case subscriptionAndAccessToken := <-registerChannel:
+		case subscriptionAndAccessToken := <-env.RegisterChannel:
 			email := subscriptionAndAccessToken.Subscription.GoogleUserInfo.Email
-			logger.Info("+subscription: %s", email)
-			AddSubscription(userStates, subscriptions, subscriptionAndAccessToken.Subscription, subscriptionAndAccessToken.GoogleAccessToken)
-			SaveSubscriptions(subscriptions, subscriptionsFileName)
+			subscription := subscriptionAndAccessToken.Subscription
+			subscriptions.Add(subscription, subscriptionAndAccessToken.GoogleAccessToken)
+			if subscriptions.Contains(email) {
+				env.Logger.Info("*subscription: %s '%s' '%s'", email, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
+			} else {
+				env.Logger.Info("+subscription: %s '%s' '%s'", email, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
+				go func() {
+					if env.Configuration.Mailchimp.IsMailchimpConfigured() {
+						error := mailchimp.Subscribe(env.Configuration.Mailchimp, env.HttpClient, &mailchimp.SubscriptionRequest{
+							Email:     email,
+							FirstName: subscription.GoogleUserInfo.GivenName,
+							LastName:  subscription.GoogleUserInfo.FamilyName,
+						})
+						if error != nil {
+							env.Logger.Warning("mailchimp/subscribe@%s %s", email, error)
+						}
+					}
+				}()
+			}
+		case email := <-env.DiscardChannel:
+			subscription := subscriptions.Remove(email)
+			env.Logger.Info("-subscription: %s '%s' '%s'", email, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
 			go func() {
-				if configuration.Mailchimp.IsMailchimpConfigured() {
-					error := mailchimp.Subscribe(configuration.Mailchimp, client, &mailchimp.SubscriptionRequest{
-						Email:     email,
-						FirstName: subscriptionAndAccessToken.Subscription.GoogleUserInfo.GivenName,
-						LastName:  subscriptionAndAccessToken.Subscription.GoogleUserInfo.FamilyName,
-					})
+				if env.Configuration.Mailchimp.IsMailchimpConfigured() {
+					error := mailchimp.Unsubscribe(env.Configuration.Mailchimp, env.HttpClient, email)
 					if error != nil {
-						logger.Warning("mailchimp/subscribe@%s %s", email, error)
+						env.Logger.Warning("mailchimp/unsubscribe@%s %s", email, error)
 					}
 				}
 			}()
-		case email := <-discardChannel:
-			logger.Info("-subscription: %s", email)
-			RemoveSubscription(userStates, subscriptions, email)
-			SaveSubscriptions(subscriptions, subscriptionsFileName)
-			go func() {
-				if configuration.Mailchimp.IsMailchimpConfigured() {
-					error := mailchimp.Unsubscribe(configuration.Mailchimp, client, email)
-					if error != nil {
-						logger.Warning("mailchimp/unsubscribe@%s %s", email, error)
-					}
-				}
-			}()
-		case s := <-signalsChannel:
-			logger.Info("Exiting: got signal %v", s)
+		case s := <-env.SignalsChannel:
+			env.Logger.Info("Exiting: got signal %v", s)
 			os.Exit(0)
 		case <-time.After(waitFor):
 			lastLoopTime = time.Now()
-			for k, subscription := range subscriptions {
+			for k, subscription := range subscriptions.Info {
 				waitGroup.Add(1)
-				go task(logger, client, discardChannel, &waitGroup, configuration, subscription, userStates[k], version)
+				go task(env, &waitGroup, subscription, subscriptions.States[k])
 			}
 			waitGroup.Wait()
-			logger.Info("Served %d clients", len(subscriptions))
+			env.Logger.Info("Served %d clients", len(subscriptions.Info))
 		}
 	}
 }

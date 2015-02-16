@@ -26,45 +26,63 @@ type SubscriptionAndAccessToken struct {
 	GoogleAccessToken string
 }
 
-func LoadSubscriptions(filename string) (map[string]*UserState, map[string]*Subscription, error) {
-	var subscriptions = make(map[string]*Subscription)
-	var states = make(map[string]*UserState)
+type Subscriptions struct {
+	Source string
+	Info   map[string]*Subscription
+	States map[string]*UserState
+}
+
+func LoadSubscriptions(filename string) (*Subscriptions, error) {
+	var subscriptions = &Subscriptions{
+		Source: filename,
+		Info:   make(map[string]*Subscription),
+		States: make(map[string]*UserState),
+	}
 	file, err := os.Open(filename)
 	if err != nil {
-		return states, subscriptions, nil
+		return subscriptions, nil
 	}
 	defer file.Close()
-	err = json.NewDecoder(file).Decode(&subscriptions)
+	err = json.NewDecoder(file).Decode(&subscriptions.Info)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	for k := range subscriptions {
-		states[k] = &UserState{
+	for k := range subscriptions.Info {
+		subscriptions.States[k] = &UserState{
 			Gdrive:            drive.NewState(),
 			GoogleAccessToken: "",
 		}
 	}
-	return states, subscriptions, nil
+	return subscriptions, nil
 }
 
-func SaveSubscriptions(states map[string]*Subscription, filename string) error {
-	file, err := os.Create(filename)
+func (subscriptions *Subscriptions) save() error {
+	file, err := os.Create(subscriptions.Source)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
-	return json.NewEncoder(file).Encode(states)
+	return json.NewEncoder(file).Encode(subscriptions)
 }
 
-func AddSubscription(userStates map[string]*UserState, subscriptions map[string]*Subscription, subscription *Subscription, googleAccessToken string) {
-	subscriptions[subscription.GoogleUserInfo.Email] = subscription
-	userStates[subscription.GoogleUserInfo.Email] = &UserState{
+func (subscriptions *Subscriptions) Add(subscription *Subscription, googleAccessToken string) {
+	subscriptions.Info[subscription.GoogleUserInfo.Email] = subscription
+	subscriptions.States[subscription.GoogleUserInfo.Email] = &UserState{
 		Gdrive:            drive.NewState(),
 		GoogleAccessToken: googleAccessToken,
 	}
+	subscriptions.save()
 }
 
-func RemoveSubscription(userStates map[string]*UserState, subscriptions map[string]*Subscription, email string) {
-	delete(subscriptions, email)
-	delete(userStates, email)
+func (subscriptions *Subscriptions) Remove(email string) *Subscription {
+	s := subscriptions.Info[email]
+	delete(subscriptions.States, email)
+	delete(subscriptions.Info, email)
+	subscriptions.save()
+	return s
+}
+
+func (subscriptions *Subscriptions) Contains(email string) bool {
+	_, ok := subscriptions.Info[email]
+	return ok
 }

@@ -9,7 +9,7 @@ type Logger struct {
 	real *log.Logger
 }
 
-func New(out io.Writer, prefix string, flag int) *Logger {
+func NewLogger(out io.Writer, prefix string, flag int) *Logger {
 	return &Logger{
 		log.New(out, prefix, flag),
 	}
