@@ -117,7 +117,7 @@ func Unsubscribe(configuration *Configuration, client *http.Client, email string
 		Email: emailInfo{
 			Email: email,
 		},
-		SendGoodbye:  true,
+		SendGoodbye:  false,
 		DeleteMember: false,
 	})
 	req, _ := http.NewRequest("POST", fmt.Sprintf("https://%s.api.mailchimp.com/2.0/lists/unsubscribe", configuration.DataCenter), bytes.NewBuffer(payload))
