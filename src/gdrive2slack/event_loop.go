@@ -10,7 +10,55 @@ import (
 	"time"
 )
 
-func task(env *Environment, waitGroup *sync.WaitGroup, subscription *Subscription, userState *UserState) {
+
+
+func EventLoop(env *Environment) {
+	subscriptions, err := LoadSubscriptions("subscriptions.json")
+	if err != nil {
+		env.Logger.Error("unreadable subscriptions file: %s", err)
+		os.Exit(1)
+	}
+
+	lastLoopTime := time.Time{}
+	waitFor := time.Duration(0)
+	for {
+		if !lastLoopTime.IsZero() {
+			waitFor = time.Duration(30)*time.Second - time.Now().Sub(lastLoopTime)
+		}
+		if waitFor < 0 {
+			waitFor = time.Duration(1) * time.Second
+		}
+		select {
+		case subscriptionAndAccessToken := <-env.RegisterChannel:
+			subscription := subscriptionAndAccessToken.Subscription
+			subscriptions.Add(subscription, subscriptionAndAccessToken.GoogleAccessToken)
+			if subscriptions.Contains(subscription.GoogleUserInfo.Email) {
+				env.Logger.Info("*subscription: %s '%s' '%s'", subscription.GoogleUserInfo.Email, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
+			} else {
+				env.Logger.Info("+subscription: %s '%s' '%s'", subscription.GoogleUserInfo.Email, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
+				go mailchimpRegistrationTask(env, subscription)
+			}
+		case email := <-env.DiscardChannel:
+			subscription := subscriptions.Remove(email)
+			env.Logger.Info("-subscription: %s '%s' '%s'", subscription.GoogleUserInfo.Email, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
+			go mailchimpDeregistrationTask(env, subscription)
+		case s := <-env.SignalsChannel:
+			env.Logger.Info("Exiting: got signal %v", s)
+			os.Exit(0)
+		case <-time.After(waitFor):
+			lastLoopTime = time.Now()
+			var waitGroup sync.WaitGroup
+			for k, subscription := range subscriptions.Info {
+				waitGroup.Add(1)
+				go serveUserTask(env, &waitGroup, subscription, subscriptions.States[k])
+			}
+			waitGroup.Wait()
+			env.Logger.Info("Served %d clients", len(subscriptions.Info))
+		}
+	}
+}
+
+func serveUserTask(env *Environment, waitGroup *sync.WaitGroup, subscription *Subscription, userState *UserState) {
 	email := subscription.GoogleUserInfo.Email
 	slackUser := subscription.SlackUserInfo.User
 	defer func() {
@@ -58,52 +106,6 @@ func task(env *Environment, waitGroup *sync.WaitGroup, subscription *Subscriptio
 			if status != slack.Ok {
 				env.Logger.Warning("[%s/%s] %s", email, slackUser, err)
 			}
-		}
-	}
-}
-
-func EventLoop(env *Environment) {
-	subscriptions, err := LoadSubscriptions("subscriptions.json")
-	if err != nil {
-		env.Logger.Error("unreadable subscriptions file: %s", err)
-		os.Exit(1)
-	}
-
-	lastLoopTime := time.Time{}
-	waitFor := time.Duration(0)
-	for {
-		if !lastLoopTime.IsZero() {
-			waitFor = time.Duration(30)*time.Second - time.Now().Sub(lastLoopTime)
-		}
-		if waitFor < 0 {
-			waitFor = time.Duration(1) * time.Second
-		}
-		select {
-		case subscriptionAndAccessToken := <-env.RegisterChannel:
-			subscription := subscriptionAndAccessToken.Subscription
-			subscriptions.Add(subscription, subscriptionAndAccessToken.GoogleAccessToken)
-			if subscriptions.Contains(subscription.GoogleUserInfo.Email) {
-				env.Logger.Info("*subscription: %s '%s' '%s'", subscription.GoogleUserInfo.Email, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
-			} else {
-				env.Logger.Info("+subscription: %s '%s' '%s'", subscription.GoogleUserInfo.Email, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
-				go mailchimpRegistrationTask(env, subscription)
-			}
-		case email := <-env.DiscardChannel:
-			subscription := subscriptions.Remove(email)
-			env.Logger.Info("-subscription: %s '%s' '%s'", subscription.GoogleUserInfo.Email, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
-			go mailchimpDeregistrationTask(env, subscription)
-		case s := <-env.SignalsChannel:
-			env.Logger.Info("Exiting: got signal %v", s)
-			os.Exit(0)
-		case <-time.After(waitFor):
-			lastLoopTime = time.Now()
-			var waitGroup sync.WaitGroup
-			for k, subscription := range subscriptions.Info {
-				waitGroup.Add(1)
-				go task(env, &waitGroup, subscription, subscriptions.States[k])
-			}
-			waitGroup.Wait()
-			env.Logger.Info("Served %d clients", len(subscriptions.Info))
 		}
 	}
 }
