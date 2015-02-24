@@ -10,8 +10,6 @@ import (
 	"time"
 )
 
-
-
 func EventLoop(env *Environment) {
 	subscriptions, err := LoadSubscriptions("subscriptions.json")
 	if err != nil {

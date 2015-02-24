@@ -6,7 +6,7 @@ SHELL = /bin/bash
 local: FORCE
 	@echo spawning docker container
 	@docker run --rm=true \
-		-v ${PWD}/src:/go/src/github.com/optionfactory/gdrive2slack/ \
+		-v ${PWD}/:/go/src/github.com/optionfactory/gdrive2slack/ \
 		-v ${PWD}/Makefile:/go/Makefile \
 		-v ${PWD}/bin:/go/bin \
 		-w /go/src/github.com/optionfactory/gdrive2slack/ \
@@ -19,7 +19,7 @@ run-local: local
 all: FORCE
 	@echo spawning docker container
 	@docker run --rm=true \
-		-v ${PWD}/src:/go/src/github.com/optionfactory/gdrive2slack/ \
+		-v ${PWD}/:/go/src/github.com/optionfactory/gdrive2slack/ \
 		-v ${PWD}/Makefile:/go/Makefile \
 		-v ${PWD}/bin:/go/bin \
 		-w /go/src/github.com/optionfactory/gdrive2slack/ \
