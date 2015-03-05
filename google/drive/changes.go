@@ -27,13 +27,13 @@ type ChangeItem struct {
 type ItemType int
 
 const (
-	File ItemType = iota
-	Folder
+	FileItemType ItemType = iota
+	FolderItemType
 )
 
 var itemTypeNames = []string{
-	File:   "file",
-	Folder: "folder",
+	FileItemType:   "file",
+	FolderItemType: "folder",
 }
 
 func (t ItemType) String() string {
@@ -98,9 +98,9 @@ func (t *ChangeItem) updateLastAction(timeRef time.Time) {
 
 func (t *ChangeItem) updateType() {
 	if t.File.MimeType == "application/vnd.google-apps.folder" {
-		t.Type = Folder
+		t.Type = FolderItemType
 	} else {
-		t.Type = File
+		t.Type = FileItemType
 	}
 }
 
