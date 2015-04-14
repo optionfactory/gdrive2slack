@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"time"
 )
@@ -173,6 +174,9 @@ func query(client *http.Client, state *State, accessToken string) (google.Status
 		if item.LastAction == Viewed || item.File.Title == "" {
 			continue
 		}
+		if isTemporaryFile(item.File.Title) {
+			continue
+		}
 		k := GracePeriodKey{item.File.Title, item.File.LastModifyingUser.EmailAddress}
 		notifiedAt, alreadyNotified := state.InGracePeriod[k]
 		if !(alreadyNotified && notifiedAt.After(threshold) && item.LastAction != Deleted) {
@@ -186,6 +190,19 @@ func query(client *http.Client, state *State, accessToken string) (google.Status
 		}
 	}
 	return google.Ok, nil
+}
+
+var ignorePatterns = []*regexp.Regexp{
+	regexp.MustCompile("^~\\$"), // MS Office temporary files
+}
+
+func isTemporaryFile(title string) bool {
+	for _, pattern := range ignorePatterns {
+		if pattern.MatchString(title) {
+			return true
+		}
+	}
+	return false
 }
 
 func LargestChangeId(client *http.Client, state *State, accessToken string) (google.StatusCode, error) {
