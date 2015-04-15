@@ -62,7 +62,7 @@ func (subscriptions *Subscriptions) save() error {
 		return err
 	}
 	defer file.Close()
-	return json.NewEncoder(file).Encode(subscriptions)
+	return json.NewEncoder(file).Encode(subscriptions.Info)
 }
 
 func (subscriptions *Subscriptions) Add(subscription *Subscription, googleAccessToken string) {
