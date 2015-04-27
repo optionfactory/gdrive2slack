@@ -6,6 +6,7 @@ import (
 	"github.com/optionfactory/gdrive2slack/google/userinfo"
 	"github.com/optionfactory/gdrive2slack/slack"
 	"os"
+	"time"
 )
 
 type Subscription struct {
@@ -57,12 +58,21 @@ func LoadSubscriptions(filename string) (*Subscriptions, error) {
 }
 
 func (subscriptions *Subscriptions) save() error {
-	file, err := os.Create(subscriptions.Source)
-	if err != nil {
-		return err
+	s := func(filename string) error {
+		file, err := os.Create(filename)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		return json.NewEncoder(file).Encode(subscriptions.Info)
 	}
-	defer file.Close()
-	return json.NewEncoder(file).Encode(subscriptions.Info)
+	suffix := time.Now().Format("2006-01-02T15-04-05")
+	err1 := s(subscriptions.Source)
+	err2 := s(subscriptions.Source + "." + suffix)
+	if err1 != nil {
+		return err1
+	}
+	return err2
 }
 
 func (subscriptions *Subscriptions) Add(subscription *Subscription, googleAccessToken string) {
