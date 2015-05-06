@@ -29,8 +29,9 @@ func EventLoop(env *Environment) {
 		select {
 		case subscriptionAndAccessToken := <-env.RegisterChannel:
 			subscription := subscriptionAndAccessToken.Subscription
+			alreadySubscribed := subscriptions.Contains(subscription.GoogleUserInfo.Email)
 			subscriptions.Add(subscription, subscriptionAndAccessToken.GoogleAccessToken)
-			if subscriptions.Contains(subscription.GoogleUserInfo.Email) {
+			if alreadySubscribed {
 				env.Logger.Info("*subscription: %s '%s' '%s'", subscription.GoogleUserInfo.Email, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
 			} else {
 				env.Logger.Info("+subscription: %s '%s' '%s'", subscription.GoogleUserInfo.Email, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
