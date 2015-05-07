@@ -5,46 +5,46 @@ import (
 	"testing"
 )
 
-func TestFlatteningAnEmptySliceYieldEmpty(t *testing.T) {
-	got := flatten(index(&folders{
-		Items: []*folder{},
-	}))
+func TestListOnEmptyFoldersYieldAnEmptySlice(t *testing.T) {
+	f := &Folders{
+		inner: make(map[string]*Folder),
+	}
+
+	got := f.List()
 	if len(got) != 0 {
 		t.Fail()
 	}
 }
 
-func TestFlattenMergePath(t *testing.T) {
-	items := []*folder{
+func TestIndexingMergesPaths(t *testing.T) {
+
+	f := []*folder{
 		{
 			Id:    "1",
-			Title: "root",
+			Title: "parent",
 			Parents: []parent{
-				{Id: "0"},
+				{"0"},
 			},
 		},
 		{
 			Id:    "2",
 			Title: "child",
 			Parents: []parent{
-				{Id: "1"},
+				{"1"},
 			},
 		},
 	}
-
-	got := flatten(index(&folders{
-		Items: items,
-	}))
-	for _, item := range got {
-		if item.Name == "child" && item.Path == "root/" {
+	for _, item := range index(f).inner {
+		t.Log(item)
+		if item.Name == "child" && item.Path == "parent" {
 			return
 		}
 	}
 	t.Fail()
 }
 
-func TestFlattenYieldsSameNumberOfFolders(t *testing.T) {
-	items := []*folder{
+func TestListYieldsSameNumberOfInputFolders(t *testing.T) {
+	in := []*folder{
 		{
 			Id:    "1",
 			Title: "something",
@@ -60,17 +60,17 @@ func TestFlattenYieldsSameNumberOfFolders(t *testing.T) {
 			},
 		},
 	}
+	f := index(in)
 
-	got := flatten(index(&folders{
-		Items: items,
-	}))
-	if len(items) != len(got) {
+	got := f.List()
+
+	if len(got) != len(in) {
 		t.Fail()
 	}
 }
 
 func TestPathForRootYieldEmptyString(t *testing.T) {
-	items := []*folder{
+	in := []*folder{
 		{
 			Id:    "1",
 			Title: "something",
@@ -79,10 +79,24 @@ func TestPathForRootYieldEmptyString(t *testing.T) {
 			},
 		},
 	}
-	got := path(index(&folders{
-		Items: items,
-	}), "0")
-	if got != "" {
+	f := index(in)
+	if got, _ := f.PathFor("1"); got != "" {
+		t.Fail()
+	}
+}
+
+func TestFolderIsContainedInItself(t *testing.T) {
+	in := []*folder{
+		{
+			Id:    "1",
+			Title: "something",
+			Parents: []parent{
+				{Id: "0"},
+			},
+		},
+	}
+	f := index(in)
+	if !f.FolderIsOrIsContainedInAny([]string{"1"}, []string{"1"}) {
 		t.Fail()
 	}
 }

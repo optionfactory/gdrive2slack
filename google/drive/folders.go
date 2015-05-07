@@ -9,6 +9,10 @@ import (
 	"net/url"
 )
 
+type Folders struct {
+	inner map[string]*Folder
+}
+
 type folders struct {
 	NextPageToken string                `json:"nextPageToken"`
 	Items         []*folder             `json:"items"`
@@ -26,12 +30,50 @@ type parent struct {
 }
 
 type Folder struct {
-	Id   string
-	Name string
-	Path string
+	Id        string
+	Name      string
+	Path      string
+	ParentIds []string
 }
 
-func fetchFolders(client *http.Client, accessToken string) (google.StatusCode, error, *folders) {
+// google prevents creating loops in folders, so we don't need to check for it.
+func index(folders []*folder) *Folders {
+	indexed := make(map[string]*Folder)
+	for _, f := range folders {
+		current := &Folder{
+			Id:        f.Id,
+			Name:      f.Title,
+			Path:      "",
+			ParentIds: make([]string, 0),
+		}
+		for _, parent := range f.Parents {
+			current.ParentIds = append(current.ParentIds, parent.Id)
+		}
+		indexed[f.Id] = current
+	}
+	for id, folder := range indexed {
+		path := ""
+		id = folder.ParentIds[0]
+		for {
+			current, ok := indexed[id]
+			if !ok {
+				folder.Path = path
+				break
+			}
+			if path != "" {
+				path = current.Name + "/" + path
+			} else {
+				path = current.Name
+			}
+			id = current.ParentIds[0]
+		}
+	}
+	return &Folders{
+		inner: indexed,
+	}
+}
+
+func FetchFolders(client *http.Client, accessToken string) (google.StatusCode, error, *Folders) {
 	u, _ := url.Parse("https://www.googleapis.com/drive/v2/files")
 	q := u.Query()
 	q.Set("corpus", "DOMAIN")
@@ -59,54 +101,46 @@ func fetchFolders(client *http.Client, accessToken string) (google.StatusCode, e
 		}
 		return google.ApiError, errors.New(folders.Error.Message), nil
 	}
-	return google.Ok, nil, folders
+	return google.Ok, nil, index(folders.Items)
 }
 
-func index(folders *folders) map[string]*folder {
-	indexed := make(map[string]*folder)
-	for _, f := range folders.Items {
-		indexed[f.Id] = f
-	}
-	return indexed
-}
-
-func path(indexed map[string]*folder, id string) string {
-	path := ""
-	for {
-		current, ok := indexed[id]
-		if !ok {
-			return path
-		}
-		path = current.Title + "/" + path
-		id = current.Parents[0].Id
-	}
-	return path
-}
-
-func flatten(indexed map[string]*folder) []Folder {
-	list := make([]Folder, 0)
-	for _, f := range indexed {
-		list = append(list, Folder{
-			Id:   f.Id,
-			Name: f.Title,
-			Path: path(indexed, f.Parents[0].Id),
-		})
+func (self *Folders) List() []*Folder {
+	list := make([]*Folder, 0)
+	for _, f := range self.inner {
+		list = append(list, f)
 	}
 	return list
 }
 
-func ListFolders(client *http.Client, accessToken string) (google.StatusCode, error, []Folder) {
-	status, err, fs := fetchFolders(client, accessToken)
-	if status != google.Ok {
-		return status, err, nil
+func (self *Folders) PathFor(folderId string) (string, bool) {
+	folder, contained := self.inner[folderId]
+	if !contained {
+		return "", contained
 	}
-	return google.Ok, nil, flatten(index(fs))
+	return folder.Path, contained
 }
 
-func PathFor(client *http.Client, accessToken string, id string) (google.StatusCode, error, string) {
-	status, err, fs := fetchFolders(client, accessToken)
-	if status != google.Ok {
-		return status, err, ""
+func (self *Folders) folderIsOrIsContainedIn(needle string, haystack string) bool {
+	current, found := self.inner[needle]
+	if !found {
+		return false
 	}
-	return google.Ok, nil, path(index(fs), id)
+	if current.Id == haystack {
+		return true
+	}
+	for _, needle = range current.ParentIds {
+		self.folderIsOrIsContainedIn(needle, haystack)
+	}
+	return false
+}
+
+func (self *Folders) FolderIsOrIsContainedInAny(folderIds []string, parentIds []string) bool {
+	for _, folderId := range folderIds {
+		for _, parentId := range parentIds {
+			if self.folderIsOrIsContainedIn(folderId, parentId) {
+				return true
+			}
+		}
+	}
+	return false
 }
