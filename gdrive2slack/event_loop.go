@@ -87,24 +87,35 @@ func serveUserTask(env *Environment, waitGroup *sync.WaitGroup, subscription *Su
 		env.Logger.Warning("[%s/%s] %s", email, slackUser, err)
 		return
 	}
-	if len(userState.Gdrive.ChangeSet) > 0 {
-		env.Logger.Info("[%s/%s] @%v %v changes", email, slackUser, userState.Gdrive.LargestChangeId, len(userState.Gdrive.ChangeSet))
-		message := CreateSlackMessage(subscription, userState, env.Version)
-		status, err := slack.PostMessage(env.HttpClient, subscription.SlackAccessToken, message)
+
+	if len(userState.Gdrive.ChangeSet) == 0 {
+		return
+	}
+	statusCode, err, folders := drive.FetchFolders(env.HttpClient, userState.GoogleAccessToken)
+	if statusCode != google.Ok {
+		panic(err)
+	}
+	message := CreateSlackMessage(subscription, userState, folders, env.Version)
+	if len(message.Attachments) == 0 {
+		return
+	}
+
+	env.Logger.Info("[%s/%s] @%v %v changes", email, slackUser, userState.Gdrive.LargestChangeId, len(message.Attachments))
+
+	status, err := slack.PostMessage(env.HttpClient, subscription.SlackAccessToken, message)
+	if status == slack.NotAuthed || status == slack.InvalidAuth || status == slack.AccountInactive || status == slack.TokenRevoked {
+		panic(err)
+	}
+	if status != slack.Ok {
+		env.Logger.Warning("[%s/%s] %s", email, slackUser, err)
+	}
+	if status == slack.ChannelNotFound {
+		status, err = slack.PostMessage(env.HttpClient, subscription.SlackAccessToken, CreateSlackUnknownChannelMessage(subscription, env.Configuration.Google.RedirectUri, message))
 		if status == slack.NotAuthed || status == slack.InvalidAuth || status == slack.AccountInactive || status == slack.TokenRevoked {
 			panic(err)
 		}
 		if status != slack.Ok {
 			env.Logger.Warning("[%s/%s] %s", email, slackUser, err)
-		}
-		if status == slack.ChannelNotFound {
-			status, err = slack.PostMessage(env.HttpClient, subscription.SlackAccessToken, CreateSlackUnknownChannelMessage(subscription, env.Configuration.Google.RedirectUri, message))
-			if status == slack.NotAuthed || status == slack.InvalidAuth || status == slack.AccountInactive || status == slack.TokenRevoked {
-				panic(err)
-			}
-			if status != slack.Ok {
-				env.Logger.Warning("[%s/%s] %s", email, slackUser, err)
-			}
 		}
 	}
 }

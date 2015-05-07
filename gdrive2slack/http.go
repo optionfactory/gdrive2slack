@@ -91,6 +91,7 @@ func handleSubscriptionRequest(env *Environment, renderer render.Render, req *ht
 			googleRefreshToken,
 			gUserInfo,
 			sUserInfo,
+			[]string{},
 		},
 		GoogleAccessToken: googleAccessToken,
 	}

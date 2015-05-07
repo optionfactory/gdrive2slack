@@ -51,6 +51,7 @@ type ChangedFile struct {
 	ModifiedDate      google.Timestamp `json:"modifiedDate"`
 	SharedWithMeDate  google.Timestamp `json:"sharedWithMeDate"`
 	Title             string           `json:"title"`
+	Parents           []Parent         `json:"parents"`
 }
 
 type Action int
@@ -134,7 +135,7 @@ func query(client *http.Client, state *State, accessToken string) (google.Status
 	if state.LargestChangeId == 0 {
 		q.Set("fields", "largestChangeId")
 	} else {
-		q.Set("fields", "largestChangeId,items(deleted,file(explicitlyTrashed,alternateLink,mimeType,createdDate,modifiedDate,sharedWithMeDate,title,ownerNames,lastModifyingUser(displayName,emailAddress)))")
+		q.Set("fields", "largestChangeId,items(deleted,file(parents(id),explicitlyTrashed,alternateLink,mimeType,createdDate,modifiedDate,sharedWithMeDate,title,ownerNames,lastModifyingUser(displayName,emailAddress)))")
 		q.Set("startChangeId", strconv.FormatUint(state.LargestChangeId+1, 10))
 	}
 	q.Set("includeDeleted", "true")

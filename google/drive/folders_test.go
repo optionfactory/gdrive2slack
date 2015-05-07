@@ -22,14 +22,14 @@ func TestIndexingMergesPaths(t *testing.T) {
 		{
 			Id:    "1",
 			Title: "parent",
-			Parents: []parent{
+			Parents: []Parent{
 				{"0"},
 			},
 		},
 		{
 			Id:    "2",
 			Title: "child",
-			Parents: []parent{
+			Parents: []Parent{
 				{"1"},
 			},
 		},
@@ -48,14 +48,14 @@ func TestListYieldsSameNumberOfInputFolders(t *testing.T) {
 		{
 			Id:    "1",
 			Title: "something",
-			Parents: []parent{
+			Parents: []Parent{
 				{Id: "0"},
 			},
 		},
 		{
 			Id:    "2",
 			Title: "somethingelse",
-			Parents: []parent{
+			Parents: []Parent{
 				{Id: "0"},
 			},
 		},
@@ -74,7 +74,7 @@ func TestPathForRootYieldEmptyString(t *testing.T) {
 		{
 			Id:    "1",
 			Title: "something",
-			Parents: []parent{
+			Parents: []Parent{
 				{Id: "0"},
 			},
 		},
@@ -90,13 +90,133 @@ func TestFolderIsContainedInItself(t *testing.T) {
 		{
 			Id:    "1",
 			Title: "something",
-			Parents: []parent{
+			Parents: []Parent{
 				{Id: "0"},
 			},
 		},
 	}
 	f := index(in)
-	if !f.FolderIsOrIsContainedInAny([]string{"1"}, []string{"1"}) {
+	if !f.FolderIsOrIsContainedInAny([]Parent{{"1"}}, []string{"1"}) {
+		t.Fail()
+	}
+}
+
+func TestFolderIsContainedInParent(t *testing.T) {
+	in := []*folder{
+		{
+			Id:    "1",
+			Title: "parent",
+			Parents: []Parent{
+				{Id: "0"},
+			},
+		},
+		{
+			Id:    "2",
+			Title: "child",
+			Parents: []Parent{
+				{Id: "1"},
+			},
+		},
+	}
+	f := index(in)
+	if !f.FolderIsOrIsContainedInAny([]Parent{{"2"}}, []string{"1"}) {
+		t.Fail()
+	}
+}
+
+func TestFolderIsContainedInAnyParent(t *testing.T) {
+	in := []*folder{
+		{
+			Id:    "1",
+			Title: "parent",
+			Parents: []Parent{
+				{Id: "0"},
+			},
+		},
+		{
+			Id:    "2",
+			Title: "parent",
+			Parents: []Parent{
+				{Id: "0"},
+			},
+		},
+		{
+			Id:    "3",
+			Title: "child",
+			Parents: []Parent{
+				{Id: "1"}, {Id: "2"},
+			},
+		},
+	}
+	f := index(in)
+	if !f.FolderIsOrIsContainedInAny([]Parent{{"3"}}, []string{"2"}) {
+		t.Fail()
+	}
+}
+
+func TestFolderIsContainedInAncestor(t *testing.T) {
+	in := []*folder{
+		{
+			Id:    "1",
+			Title: "parent",
+			Parents: []Parent{
+				{Id: "0"},
+			},
+		},
+		{
+			Id:    "2",
+			Title: "parent",
+			Parents: []Parent{
+				{Id: "1"},
+			},
+		},
+		{
+			Id:    "3",
+			Title: "child",
+			Parents: []Parent{
+				{Id: "2"},
+			},
+		},
+	}
+	f := index(in)
+	if !f.FolderIsOrIsContainedInAny([]Parent{{"3"}}, []string{"1"}) {
+		t.Fail()
+	}
+}
+
+func TestFolderIsContainedInAnySiblingAncestor(t *testing.T) {
+	in := []*folder{
+		{
+			Id:    "1",
+			Title: "parent",
+			Parents: []Parent{
+				{Id: "0"},
+			},
+		},
+		{
+			Id:    "1b",
+			Title: "parent",
+			Parents: []Parent{
+				{Id: "0"},
+			},
+		},
+		{
+			Id:    "2",
+			Title: "parent",
+			Parents: []Parent{
+				{Id: "1"}, {Id: "1b"},
+			},
+		},
+		{
+			Id:    "3",
+			Title: "child",
+			Parents: []Parent{
+				{Id: "2"},
+			},
+		},
+	}
+	f := index(in)
+	if !f.FolderIsOrIsContainedInAny([]Parent{{"3"}}, []string{"1b"}) {
 		t.Fail()
 	}
 }

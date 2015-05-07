@@ -10,11 +10,12 @@ import (
 )
 
 type Subscription struct {
-	Channel            string             `json:"channel"`
-	SlackAccessToken   string             `json:"slack_access_token"`
-	GoogleRefreshToken string             `json:"google_refresh_token"`
-	GoogleUserInfo     *userinfo.UserInfo `json:"guser"`
-	SlackUserInfo      *slack.UserInfo    `json:"suser"`
+	Channel                    string             `json:"channel"`
+	SlackAccessToken           string             `json:"slack_access_token"`
+	GoogleRefreshToken         string             `json:"google_refresh_token"`
+	GoogleUserInfo             *userinfo.UserInfo `json:"guser"`
+	SlackUserInfo              *slack.UserInfo    `json:"suser"`
+	GoogleInterestingFolderIds []string           `json:"google_interesting_folder_ids"`
 }
 
 type UserState struct {
@@ -48,10 +49,14 @@ func LoadSubscriptions(filename string) (*Subscriptions, error) {
 	if err != nil {
 		return nil, err
 	}
-	for k := range subscriptions.Info {
+	for k, sub := range subscriptions.Info {
 		subscriptions.States[k] = &UserState{
 			Gdrive:            drive.NewState(),
 			GoogleAccessToken: "",
+		}
+		// handle migration from versions prior to folder filtering
+		if sub.GoogleInterestingFolderIds == nil {
+			sub.GoogleInterestingFolderIds = make([]string, 0)
 		}
 	}
 	return subscriptions, nil

@@ -22,10 +22,10 @@ type folders struct {
 type folder struct {
 	Id      string   `json:"id"`
 	Title   string   `json:"title"`
-	Parents []parent `json:"parents"`
+	Parents []Parent `json:"parents"`
 }
 
-type parent struct {
+type Parent struct {
 	Id string `json:"id"`
 }
 
@@ -129,15 +129,17 @@ func (self *Folders) folderIsOrIsContainedIn(needle string, haystack string) boo
 		return true
 	}
 	for _, needle = range current.ParentIds {
-		self.folderIsOrIsContainedIn(needle, haystack)
+		if self.folderIsOrIsContainedIn(needle, haystack) {
+			return true
+		}
 	}
 	return false
 }
 
-func (self *Folders) FolderIsOrIsContainedInAny(folderIds []string, parentIds []string) bool {
-	for _, folderId := range folderIds {
+func (self *Folders) FolderIsOrIsContainedInAny(folders []Parent, parentIds []string) bool {
+	for _, folder := range folders {
 		for _, parentId := range parentIds {
-			if self.folderIsOrIsContainedIn(folderId, parentId) {
+			if self.folderIsOrIsContainedIn(folder.Id, parentId) {
 				return true
 			}
 		}
