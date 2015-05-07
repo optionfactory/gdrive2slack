@@ -93,7 +93,8 @@ func serveUserTask(env *Environment, waitGroup *sync.WaitGroup, subscription *Su
 	}
 	statusCode, err, folders := drive.FetchFolders(env.HttpClient, userState.GoogleAccessToken)
 	if statusCode != google.Ok {
-		panic(err)
+		env.Logger.Warning("[%s/%s] while fetching folders: %s", email, slackUser, err)
+		return
 	}
 	message := CreateSlackMessage(subscription, userState, folders, env.Version)
 	if len(message.Attachments) == 0 {

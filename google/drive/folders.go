@@ -53,6 +53,9 @@ func index(folders []*folder) *Folders {
 	}
 	for id, folder := range indexed {
 		path := ""
+		if len(folder.ParentIds) == 0 {
+			continue
+		}
 		id = folder.ParentIds[0]
 		for {
 			current, ok := indexed[id]
@@ -64,6 +67,9 @@ func index(folders []*folder) *Folders {
 				path = current.Name + "/" + path
 			} else {
 				path = current.Name
+			}
+			if len(current.ParentIds) == 0 {
+				break
 			}
 			id = current.ParentIds[0]
 		}
