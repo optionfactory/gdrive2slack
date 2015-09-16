@@ -47,7 +47,8 @@
                 window.gapi.auth.authorize({
                     'client_id': clientId,
                     'scope': scope,
-                    'immediate': false
+                    'immediate': false,
+                    'approval_prompt': 'force'
                 }, function(authResult) {
                     if (authResult && !authResult.error) {
                         self.oauthToken = authResult.access_token;
