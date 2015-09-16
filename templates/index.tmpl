@@ -59,7 +59,7 @@
                 <section id="drive-folder-form" class="panel-body title" style="display: none">
                   <div>
                     <div class="symbol col-bottom"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><strong class="fa-stack-1x fa-inverse"><span>4</span><span class="divider">/</span><span class="total">4</span></strong></span></div>
-                    <div class="form-group"><label for="slack-channel" style="display: block">Google drive folder</label><input type="text" id="drive-folder" readonly="readonly" class="form-control" style="display: inline-block; width: 80%"><button value="choose" class="form-control" id="pick-drive-folder" style="display: inline-block; width: 20%; max-width: 50px; min-width: 35px;"><i class="fa fa-folder-open-o"></i></button><input type="hidden" id="drive-folder-id"></div>
+                    <div class="form-group"><label for="slack-channel" style="display: block">Google drive folder</label><input type="text" id="drive-folder" readonly="readonly" placeholder="Leave empty to watch all folders" class="form-control" style="display: inline-block; width: 80%"><button value="choose" class="form-control" id="pick-drive-folder" style="display: inline-block; width: 20%; max-width: 50px; min-width: 35px;"><i class="fa fa-folder-open-o"></i></button><input type="hidden" id="drive-folder-id"></div>
                     <div class="action col-bottom"><button id="action-select-folder" class="btn btn-success btn-lg push-right">Go</button></div>
                   </div>
                 </section>
@@ -167,6 +167,7 @@
                 <li>authorize our service to access info on your Google Drive changes</li>
                 <li>authorize our service to send you messages on Slack</li>
                 <li>choose a Slack <i>#channel</i>, <i>@user</i> or leave blank for <i>#general</i></li>
+                <li>choose a Drive #folder to watch, or leave blank to include all changes</li>
               </ul>
             </section>
           </div>
@@ -206,8 +207,7 @@
                   <div>How can I watch a specific folder?</div>
                 </div>
               </header>
-              <p>This feature is currently under development, we will notify all subscribers as soon as it's ready.</p>
-              <p>As a workaround, you can share the desired folder with a different Google account and use that account to subscribe to our service.</p>
+              <p>Just select it during the registration process. If you don't specify a folder, all folders under your 'My Drive' will be watched.</p>
             </section>
           </div>
         </div>
@@ -229,8 +229,9 @@
               <ul>
                 <li><b>email address and basic profile info</b> to discriminate between different users</li>
                 <li><b>metadata for files and documents in your Google Drive</b> to access Google Drive changes stream</li>
+                <li><b>read access to files and documents in your Google Drive</b> (during registration only), to allow you to choose the folder to watch</li>
               </ul>
-              <p>We <strong>do not</strong> require any kind of read/write permissions on your file contents.</p>
+              <p>We <strong>do not</strong> require any kind of write permissions on your file contents.</p>
             </section>
           </div>
           <div class="col-md-6 col-md-height">
