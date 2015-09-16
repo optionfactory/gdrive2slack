@@ -8,13 +8,14 @@ import (
 	"github.com/optionfactory/gdrive2slack/google/userinfo"
 	"github.com/optionfactory/gdrive2slack/slack"
 	"net/http"
+	"strings"
 )
 
 type Request struct {
 	GoogleCode string `json:"g"`
 	SlackCode  string `json:"s"`
 	Channel    string `json:"c"`
-	FolderId   string `json:"fid"`
+	FolderIds  string `json:"fids"`
 	FolderName string `json:"fn"`
 }
 
@@ -59,12 +60,15 @@ func handleSubscriptionRequest(env *Environment, renderer render.Render, req *ht
 		renderer.JSON(400, &ErrResponse{"Invalid oauth code for slack"})
 		return
 	}
-	if r.FolderId == "" {
-		renderer.JSON(400, &ErrResponse{"Invalid folder id"})
-		return
-	}
 	if r.Channel == "" {
 		r.Channel = "#general"
+	}
+	var inputFolderIds = strings.Split(r.FolderIds, ",")
+	var folderIds = make([]string, 0, len(inputFolderIds))
+	for _, fid := range inputFolderIds {
+		if len(strings.TrimSpace(fid)) == 0 {
+			folderIds = append(folderIds, fid)
+		}
 	}
 	googleRefreshToken, googleAccessToken, status, err := google.NewAccessToken(env.Configuration.Google, env.HttpClient, r.GoogleCode)
 	if status != google.Ok {
@@ -97,7 +101,7 @@ func handleSubscriptionRequest(env *Environment, renderer render.Render, req *ht
 			googleRefreshToken,
 			gUserInfo,
 			sUserInfo,
-			[]string{r.FolderId},
+			folderIds,
 		},
 		GoogleAccessToken: googleAccessToken,
 	}

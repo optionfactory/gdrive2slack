@@ -62,8 +62,9 @@ func CreateSlackAttachment(change *drive.ChangeItem) *slack.Attachment {
 
 func CreateSlackMessage(subscription *Subscription, userState *UserState, folders *drive.Folders, version string) *slack.Message {
 	var attachments = make([]slack.Attachment, 0, len(userState.Gdrive.ChangeSet))
+	var roots = subscription.GoogleInterestingFolderIds
 	for i := 0; i != len(userState.Gdrive.ChangeSet); i++ {
-		if folders.FolderIsOrIsContainedInAny(userState.Gdrive.ChangeSet[i].File.Parents, subscription.GoogleInterestingFolderIds) {
+		if len(roots) == 0 || folders.FolderIsOrIsContainedInAny(userState.Gdrive.ChangeSet[i].File.Parents, roots) {
 			attachments = append(attachments, *CreateSlackAttachment(&userState.Gdrive.ChangeSet[i]))
 		}
 

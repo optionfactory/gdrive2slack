@@ -372,8 +372,8 @@
                 $('#slack-channel-not-found').show();
               }
               $('#slack-channel-panel').show();
-              if (state.fn) {
-                $('#selected-folder').html(state.fn);
+              if (state.fns) {
+                $('#selected-folder').html(state.fns[0]);
                 $('#drive-folder-selected').show();
               }
               $('#drive-folder-panel').show();
@@ -431,7 +431,7 @@
               $('#pick-drive-folder').on("click", picker.pick.bind(picker));
 
               $('#action-select-folder').click(function(){
-                var folder = $('#drive-folder-id').val() || picker.rootFolderId;
+                var folder = $('#drive-folder-id').val();
                 var folderName = $('#drive-folder').val() || "/";
                 $('#selected-folder').html(folderName);
                 $('#drive-folder-form').hide();
@@ -439,7 +439,7 @@
                 
                 $('#registration-progress').show();
                 animate_show('#registration-panel', 'bounceInDown');
-                var newState = JSON.stringify($.extend({}, state, { fid: folder}));
+                var newState = JSON.stringify($.extend({}, state, { fids: folder}));
                 $.ajax({
                       url: '/',
                       type: 'PUT',
@@ -447,7 +447,7 @@
                       contentType: 'application/json',
                       data: newState
                   }).done(function(response){
-                      var registeredState = JSON.stringify($.extend({}, state, {d: response.user.givenName, f: response.channelFound, fn: $('#drive-folder').val() }));
+                      var registeredState = JSON.stringify($.extend({}, state, {d: response.user.givenName, f: response.channelFound, fns: [folderName] }));
                       registration_success(registeredState);
                   }).fail(function(response){
                       var error = response && response.responseJSON && response.responseJSON.error ? response.responseJSON.error : "unknown";
