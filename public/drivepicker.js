@@ -15,30 +15,32 @@
     }
 
     window.DrivePicker.prototype = {
-        _loadRootFolder: function() {
+        _loadRootFolder: function(lock) {
             var self = this;
             if(this.oauthToken && this.driveLoaded) {
                 gapi.client.drive.about.get().execute(function(resp) {
                     self.rootFolderId = resp.rootFolderId;
-                    self._pick();
+                    self._pick(lock);
                 })
             }
         },
-        _pick: function() {
-            if(this.oauthToken && this.rootFolderId && this.pickerLoaded) {
+        _pick: function(lock) {
+            if(!lock.spent && this.oauthToken && this.rootFolderId && this.pickerLoaded) {
+                lock.spent = true;
                 this.createPicker();
             }
         },
         pick: function() {
             var self = this;
+            var lock = {};
             
             gapi.client.load("drive", "v2", function() {
                 self.driveLoaded = true;
-                self._loadRootFolder();
+                self._loadRootFolder(lock);
             });
             gapi.load('picker', {'callback': function() {
                 self.pickerLoaded = true;
-                self._pick();
+                self._pick(lock);
             }});
     
             gapi.auth.init(function() {
@@ -49,7 +51,7 @@
                 }, function(authResult) {
                     if (authResult && !authResult.error) {
                         self.oauthToken = authResult.access_token;
-                        self._loadRootFolder();
+                        self._loadRootFolder(lock);
                     }
                 });
             });
