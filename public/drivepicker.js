@@ -17,7 +17,9 @@
     window.DrivePicker.prototype = {
         _loadRootFolder: function(lock) {
             var self = this;
-            if(this.oauthToken && this.driveLoaded) {
+            if(this.rootFolderId) {
+                self._pick(lock);
+            } else if(this.oauthToken && this.driveLoaded) {
                 gapi.client.drive.about.get().execute(function(resp) {
                     self.rootFolderId = resp.rootFolderId;
                     self._pick(lock);
@@ -42,20 +44,23 @@
                 self.pickerLoaded = true;
                 self._pick(lock);
             }});
-    
-            gapi.auth.init(function() {
-                window.gapi.auth.authorize({
-                    'client_id': clientId,
-                    'scope': scope,
-                    'immediate': false,
-                    'approval_prompt': 'force'
-                }, function(authResult) {
-                    if (authResult && !authResult.error) {
-                        self.oauthToken = authResult.access_token;
-                        self._loadRootFolder(lock);
-                    }
+            if (this.oauthToken) {
+                self._loadRootFolder(lock);
+            } else {
+                gapi.auth.init(function() {
+                    window.gapi.auth.authorize({
+                        'client_id': clientId,
+                        'scope': scope,
+                        'immediate': false,
+                        'approval_prompt': 'force'
+                    }, function(authResult) {
+                        if (authResult && !authResult.error) {
+                            self.oauthToken = authResult.access_token;
+                            self._loadRootFolder(lock);
+                        }
+                    });
                 });
-            });
+            }
         },
         createPicker: function() {
             var view = new google.picker.DocsView();
