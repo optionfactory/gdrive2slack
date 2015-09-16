@@ -49,6 +49,22 @@
                 </section>
               </div>
 
+              <div id="drive-folder-panel" class="panel panel-default subscription" style="display: none">
+                <section id="drive-folder-selected" class="panel-body title" style="display: none">
+                  <div>
+                    <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x text-success"></i><i class="fa fa-stack-1x fa-inverse fa-check"></i></span></div>
+                    <div>Google drive folder selected: <strong id="selected-folder"></strong></div>
+                  </div>
+                </section>
+                <section id="drive-folder-form" class="panel-body title" style="display: none">
+                  <div>
+                    <div class="symbol col-bottom"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><strong class="fa-stack-1x fa-inverse"><span>4</span><span class="divider">/</span><span class="total">4</span></strong></span></div>
+                    <div class="form-group"><label for="slack-channel" style="display: block">Google drive folder</label><input type="text" id="drive-folder" readonly="readonly" class="form-control" style="display: inline-block; width: 80%"><button value="choose" class="form-control" id="pick-drive-folder" style="display: inline-block; width: 20%; max-width: 50px; min-width: 35px;"><i class="fa fa-folder-open-o"></i></button><input type="hidden" id="drive-folder-id"></div>
+                    <div class="action col-bottom"><button id="action-select-folder" class="btn btn-success btn-lg push-right">Go</button></div>
+                  </div>
+                </section>
+              </div>
+
               <div id="slack-channel-panel" class="panel panel-default subscription" style="display: none">
                 <section id="slack-channel-selected" class="panel-body title" style="display: none">
                   <div>
@@ -58,7 +74,7 @@
                 </section>
                 <section id="slack-channel-form" class="panel-body title" style="display: none">
                   <div>
-                    <div class="symbol col-bottom"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><strong class="fa-stack-1x fa-inverse"><span>3</span><span class="divider">/</span><span class="total">3</span></strong></span></div>
+                    <div class="symbol col-bottom"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><strong class="fa-stack-1x fa-inverse"><span>3</span><span class="divider">/</span><span class="total">4</span></strong></span></div>
                     <div class="form-group"><label for="slack-channel">Slack channel</label><input type="text" class="form-control" id="slack-channel" placeholder="#channel or @user or leave empty for #general"></div>
                     <div class="action col-bottom"><button id="action-select-channel" class="btn btn-success btn-lg push-right">Go</button></div>
                   </div>
@@ -80,7 +96,7 @@
                 </section>
                 <section id="slack-auth-request" class="panel-body title" style="display: none">
                   <div>
-                    <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><strong class="fa-stack-1x fa-inverse"><span>2</span><span class="divider">/</span><span class="total">3</span></strong></span></div>
+                    <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><strong class="fa-stack-1x fa-inverse"><span>2</span><span class="divider">/</span><span class="total">4</span></strong></span></div>
                     <div>Authorize access to Slack domain</div>
                     <div class="action"><button id="action-auth-slack" class="btn btn-success btn-lg push-right">Go</button></div>
                   </div>
@@ -96,7 +112,7 @@
                 </section>
                 <section id="google-auth-request" class="panel-body title" style="display: none">
                   <div>
-                    <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><strong class="fa-stack-1x fa-inverse"><span>1</span><span class="divider">/</span><span class="total">3</span></strong></span></div>
+                    <div class="symbol"><span class="fa-stack fa-lg icon"><i class="fa fa-square fa-stack-2x"></i><strong class="fa-stack-1x fa-inverse"><span>1</span><span class="divider">/</span><span class="total">4</span></strong></span></div>
                     <div>Authorize access to Google Drive changes stream</div>
                     <div class="action"><button id="action-auth-google" class="btn btn-success btn-lg push-right">Go</button></div>
                   </div>
@@ -277,7 +293,8 @@
 
       <!-- GitHub ribbon-->
       <a href="https://github.com/optionfactory/gdrive2slack"><img style="position: absolute; top: 0; right: 0; border: 0; z-index:1001" src="https://camo.githubusercontent.com/365986a132ccd6a44c23a9169022c0b5c890c387/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f7265645f6161303030302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png"></a>
-      
+      <script src="https://apis.google.com/js/client.js"></script>
+      <script src="drivepicker.js"></script>
       <script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
       <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
       <script type="text/javascript">
@@ -337,7 +354,7 @@
         }
       </script>      
       <script type="text/javascript">
-        (function(){
+        document.addEventListener('DOMContentLoaded', function(event) {
             var params=$.url_params();
             var state = JSON.parse(params.state || "{}")
 
@@ -355,15 +372,27 @@
                 $('#slack-channel-not-found').show();
               }
               $('#slack-channel-panel').show();
+              if (state.fn) {
+                $('#selected-folder').html(state.fn);
+                $('#drive-folder-selected').show();
+              }
+              $('#drive-folder-panel').show();
               $('#registration-user').html(state.d);
               $('#registration-success').show();
               $('#registration-panel').show();
 
-              animate_hide('#google-auth-panel', 'fadeOut', 1000);
-              animate_hide('#slack-auth-panel', 'fadeOut', 1500);
-              if (state.f) {
-                animate_hide('#slack-channel-panel', 'fadeOut', 2000);
+              var delay = 1000;
+              var nextDelay = function() {
+                var retval = delay;
+                delay += 500;
+                return retval;
               }
+              animate_hide('#google-auth-panel', 'fadeOut', nextDelay());
+              animate_hide('#slack-auth-panel', 'fadeOut',  nextDelay());
+              if (state.f) {
+                animate_hide('#slack-channel-panel', 'fadeOut', nextDelay());
+              }
+              animate_hide('#drive-folder-panel', 'fadeOut', nextDelay());
               return;
             }
 
@@ -384,6 +413,50 @@
               animate_hide('#slack-channel-panel', 'fadeOut', 2000);
               return;
             }
+            if (state.c) {
+              $('#google-auth-success').show();
+              $('#google-auth-panel').show();
+              $('#slack-auth-success').show();
+              $('#slack-auth-panel').show();
+              $('#slack-channel-panel').show();
+              $('#selected-channel').html(state.c);
+              $('#slack-channel-selected').show();
+
+              $('#drive-folder-panel').show();
+              $('#drive-folder-form').show();
+              var picker = new DrivePicker(function(doc) {
+                $('#drive-folder').val(doc.name);
+                $('#drive-folder-id').val(doc.id);
+              });
+              $('#pick-drive-folder').on("click", picker.pick.bind(picker));
+
+              $('#action-select-folder').click(function(){
+                var folder = $('#drive-folder-id').val() || picker.rootFolderId;
+                var folderName = $('#drive-folder').val() || "/";
+                $('#selected-folder').html(folderName);
+                $('#drive-folder-form').hide();
+                $('#drive-folder-selected').show();
+                
+                $('#registration-progress').show();
+                animate_show('#registration-panel', 'bounceInDown');
+                var newState = JSON.stringify($.extend({}, state, { fid: folder}));
+                $.ajax({
+                      url: '/',
+                      type: 'PUT',
+                      processData: false,
+                      contentType: 'application/json',
+                      data: newState
+                  }).done(function(response){
+                      var registeredState = JSON.stringify($.extend({}, state, {d: response.user.givenName, f: response.channelFound, fn: $('#drive-folder').val() }));
+                      registration_success(registeredState);
+                  }).fail(function(response){
+                      var error = response && response.responseJSON && response.responseJSON.error ? response.responseJSON.error : "unknown";
+                      registration_failure(newState, error);
+                  });
+                  return false;
+                });
+              return;
+            }
 
             if (params.code && state.g) {
               // step 2 completed, slack authorization;
@@ -401,20 +474,7 @@
                 $('#registration-progress').show();
                 animate_show('#registration-panel', 'bounceInDown');
                 var newState = JSON.stringify($.extend({}, state, { s: params.code, c: channel}));
-                $.ajax({
-                    url: '/',
-                    type: 'PUT',
-                    processData: false,
-                    contentType: 'application/json',
-                    data: newState
-                }).done(function(response){
-                    var registeredState = JSON.stringify($.extend({}, state, {c: channel, d: response.user.givenName, f: response.channelFound}));
-                    registration_success(registeredState);
-                }).fail(function(response){
-                    var error = response && response.responseJSON && response.responseJSON.error ? response.responseJSON.error : "unknown";
-                    registration_failure(newState, error);
-                });
-                return false;
+                document.location.href="/"+"?state="+encodeURIComponent(newState);
               });
               return;
             }
@@ -434,7 +494,6 @@
             }
 
             // no step completed, initial layout
-            var newState = JSON.stringify(state);
             $('#action-auth-google').click(function(){
                 var newState = JSON.stringify(state);
                 google_oauth(newState);
@@ -443,7 +502,7 @@
             $('#google-auth-request').show();
             animate_show('#google-auth-panel', 'bounceInDown');
 
-        })();
+        });
       </script>
       {{if .Configuration.GoogleTrackingId}}
       <script>

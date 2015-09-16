@@ -14,6 +14,8 @@ type Request struct {
 	GoogleCode string `json:"g"`
 	SlackCode  string `json:"s"`
 	Channel    string `json:"c"`
+	FolderId   string `json:"fid"`
+	FolderName string `json:"fn"`
 }
 
 type ErrResponse struct {
@@ -57,6 +59,10 @@ func handleSubscriptionRequest(env *Environment, renderer render.Render, req *ht
 		renderer.JSON(400, &ErrResponse{"Invalid oauth code for slack"})
 		return
 	}
+	if r.FolderId == "" {
+		renderer.JSON(400, &ErrResponse{"Invalid folder id"})
+		return
+	}
 	if r.Channel == "" {
 		r.Channel = "#general"
 	}
@@ -91,7 +97,7 @@ func handleSubscriptionRequest(env *Environment, renderer render.Render, req *ht
 			googleRefreshToken,
 			gUserInfo,
 			sUserInfo,
-			[]string{},
+			[]string{r.FolderId},
 		},
 		GoogleAccessToken: googleAccessToken,
 	}
