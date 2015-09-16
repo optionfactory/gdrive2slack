@@ -69,6 +69,7 @@ func index(folders []*folder) *Folders {
 				path = current.Name
 			}
 			if len(current.ParentIds) == 0 {
+				folder.Path = path
 				break
 			}
 			id = current.ParentIds[0]
