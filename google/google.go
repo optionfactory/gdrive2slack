@@ -55,6 +55,7 @@ func (t *Timestamp) Gte(others ...Timestamp) bool {
 type OauthConfiguration struct {
 	ClientId     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
+	ApiKey       string `json:"api_key"`
 	RedirectUri  string `json:"redirect_uri"`
 }
 

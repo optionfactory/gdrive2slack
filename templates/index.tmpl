@@ -430,7 +430,8 @@
 
               $('#drive-folder-panel').show();
               $('#drive-folder-form').show();
-              var picker = new DrivePicker(function(doc) {
+              animate_show('#drive-folder-panel', 'bounceInDown');
+              var picker = new DrivePicker('{{.Configuration.Google.ClientId}}', '{{.Configuration.Google.ApiKey}}', function(doc) {
                 $('#drive-folder').val(doc.name);
                 $('#drive-folder-id').val(doc.id);
               });
@@ -481,8 +482,6 @@
                 $('#selected-channel').html(channel);
                 $('#slack-channel-form').hide();
                 $('#slack-channel-selected').show();
-                $('#registration-progress').show();
-                animate_show('#registration-panel', 'bounceInDown');
                 var newState = JSON.stringify($.extend({}, state, { s: params.code, c: channel}));
                 document.location.href="/"+"?state="+encodeURIComponent(newState);
               });

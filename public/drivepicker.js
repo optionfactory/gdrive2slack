@@ -1,16 +1,16 @@
 (function() {
-    var developerKey = 'AIzaSyA41Ht18bKcPh6wM2-RfHZubxBfs1Oox0g';
-    var clientId = "906425490329-ek2j1r0a58k9skb9lq5micpfhpeihqlp.apps.googleusercontent.com";
     var scope = ['https://www.googleapis.com/auth/drive.readonly'];
-    var clientLoaded = false;
 
-    window.DrivePicker = function(cb) {
+    window.DrivePicker = function(clientId, apiKey, cb) {
+        this.clientId = clientId;
+        this.apiKey = apiKey;
+        this.cb = cb;
+
         this.oauthToken = null;
         this.driveLoaded = false;
         this.rootFolderId = null;
         this.pickerLoaded = false;
-        this.cb = cb;
-
+        
         var self = this;
     }
 
@@ -49,7 +49,7 @@
             } else {
                 gapi.auth.init(function() {
                     window.gapi.auth.authorize({
-                        'client_id': clientId,
+                        'client_id': self.clientId,
                         'scope': scope,
                         'immediate': false,
                         'approval_prompt': 'force'
@@ -71,7 +71,7 @@
             var picker = new google.picker.PickerBuilder().
                 addView(view).
                 setOAuthToken(this.oauthToken).
-                setDeveloperKey(developerKey).
+                setDeveloperKey(this.apiKey).
                 setCallback(this.pickerCallback.bind(this)).
                 build();
             picker.setVisible(true);
