@@ -370,20 +370,20 @@
               $('#slack-auth-success').show();
               $('#slack-auth-panel').show();
               if (state.f) {
-                $('#selected-channel').html(state.c);
+                $('#selected-channel').text(state.c);
                 $('#slack-channel-selected').show();
               } else {
                 console.log(state);
-                $('#not-found-channel').html(state.c);
+                $('#not-found-channel').text(state.c);
                 $('#slack-channel-not-found').show();
               }
               $('#slack-channel-panel').show();
               if (state.fns) {
-                $('#selected-folder').html(state.fns[0]);
+                $('#selected-folder').text(state.fns[0]);
                 $('#drive-folder-selected').show();
               }
               $('#drive-folder-panel').show();
-              $('#registration-user').html(state.d);
+              $('#registration-user').text(state.d);
               $('#registration-success').show();
               $('#registration-panel').show();
 
@@ -407,10 +407,10 @@
               $('#google-auth-panel').show();
               $('#slack-auth-success').show();
               $('#slack-auth-panel').show();
-              $('#selected-channel').html(state.c);
+              $('#selected-channel').text(state.c);
               $('#slack-channel-selected').show();
               $('#slack-channel-panel').show();
-              $('#registration-error').html(params.error);
+              $('#registration-error').text(params.error);
               $('#registration-failure').show();
               $('#registration-panel').show();
 
@@ -425,7 +425,7 @@
               $('#slack-auth-success').show();
               $('#slack-auth-panel').show();
               $('#slack-channel-panel').show();
-              $('#selected-channel').html(state.c);
+              $('#selected-channel').text(state.c);
               $('#slack-channel-selected').show();
 
               $('#drive-folder-panel').show();
@@ -444,7 +444,7 @@
               $('#action-select-folder').click(function(){
                 var folder = $('#drive-folder-id').val();
                 var folderName = $('#drive-folder').val() || "/";
-                $('#selected-folder').html(folderName);
+                $('#selected-folder').text(folderName);
                 $('#drive-folder-form').hide();
                 $('#drive-folder-selected').show();
                 
@@ -479,9 +479,6 @@
               animate_show('#slack-channel-panel', 'bounceInDown');
               $('#action-select-channel').click(function(){
                 var channel = $('#slack-channel').val() || "#general";
-                $('#selected-channel').html(channel);
-                $('#slack-channel-form').hide();
-                $('#slack-channel-selected').show();
                 var newState = JSON.stringify($.extend({}, state, { s: params.code, c: channel}));
                 document.location.href="/"+"?state="+encodeURIComponent(newState);
               });
