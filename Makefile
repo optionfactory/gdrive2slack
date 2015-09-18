@@ -16,6 +16,16 @@ local: FORCE
 run-local: local
 	bin/$(PROJECT)-linux-amd64 configuration.json
 
+opfa: FORCE
+	@echo spawning docker container
+	@docker run --rm=true \
+		-v ${PWD}/:/go/src/github.com/optionfactory/gdrive2slack/ \
+		-v ${PWD}/Makefile:/go/Makefile \
+		-v ${PWD}/bin:/go/bin \
+		-w /go/src/github.com/optionfactory/gdrive2slack/ \
+		golang:1.4-cross \
+		make -f /go/Makefile $(PROJECT)-linux-amd64 UID=${UID} GID=${GID} VERSION=${VERSION}
+
 all: FORCE
 	@echo spawning docker container
 	@docker run --rm=true \
