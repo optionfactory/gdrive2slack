@@ -4,7 +4,7 @@
       <title>Google Drive to Slack integration</title>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="description" content="Frictionless integration between Google Drive and Slack">
+      <meta name="description" content="Frictionless integration between Google Drive and Slack. Now with filtering by folder!">
       <meta name="keywords" content="slack,google,drive,gdrive,integration">
       <link rel="shortcut icon" href="/favicon.ico?ck={{.Version}}">
       <link rel="apple-touch-icon" href="/favicon.png?ck={{.Version}}">
@@ -26,8 +26,8 @@
             <div class="col-md-12 text-center main-column col-md-height">
               <h1 class="main-title horizontal">Google Drive &#8594; Slack</h1>
               <h1 class="main-title vertical">Google Drive<br>&#8595;<br>Slack</h1>
-              <p class="lead">Slack notifications whenever you work on Google Drive docs</p>
-
+              <p class="lead">Slack notifications whenever you work on Google Drive docs
+              <br/><span style="font-size: .8em; font-weight: normal" class="news">Now supports watching a specific folder!</span></p>
               <div id="registration-panel" class="panel panel-default subscription" style="display: none">
                 <section id="registration-success" class="panel-body title" style="display: none">
                   <div>
@@ -172,7 +172,7 @@
                 <li>authorize our service to access info on your Google Drive changes</li>
                 <li>authorize our service to send you messages on Slack</li>
                 <li>choose a Slack <i>#channel</i>, <i>@user</i> or leave blank for <i>#general</i></li>
-                <li>choose a Drive #folder to watch, or leave blank to include all changes</li>
+                <li><span class="news">new!</span> choose a Drive folder to watch, or leave blank to include all</li>
               </ul>
             </section>
           </div>
@@ -184,7 +184,8 @@
                   <div>How do I unsubscribe?</div>
                 </div>
               </header>
-              <p>Just revoke authorizations for our application from your <a href="https://security.google.com/settings/security/permissions" target="_blank">Google account</a> and from your <a href="https://api.slack.com/tokens" target="_blank">Slack account</a>.</p>              
+              <p>Unsubscribing from our service is incredibly easy. Just revoke authorizations for our application from your <a href="https://security.google.com/settings/security/permissions" target="_blank">Google account</a> and from your <a href="https://api.slack.com/tokens" target="_blank">Slack account</a>.</p>
+              <p>No need to do anything else; our systems will notice and remove your registration</p>           
             </section>
           </div>
         </div>
@@ -212,8 +213,9 @@
                   <div>How can I watch a specific folder?</div>
                 </div>
               </header>
-              <p><span style="color: white; background-color: rgb(226, 43, 20); border-radius: 5px; margin-right: 5px; padding: 0 5px 0 5px; font-weight: bolder; display: inline-block;">New feature!</span> Just select it during the registration process. If you don't specify a folder, all folders under your 'My Drive' will be watched.</p>
-              <p>In case you have multiple Google accounts, please <b>make sure you use the same in the first and last steps</b>(i.e. you choose a folder from the same Google Drive account you have authorized), otherwise you won't receive any notification.</p>
+              <p><span class="news">New feature!</span> Just select it during the registration process. If you don't specify a folder, all folders under your 'My Drive' will be watched.</p>
+              <p>Selecting multiple folders is currently not supported. If you do need such a feature, please open an issue on github.</p>
+              <p>In case you have multiple Google accounts, <b>make sure to use the same in the first and last steps</b> (i.e. choose a folder from the same Google Drive account you have authorized to watch), or it won't work.</p>
             </section>
           </div>
         </div>

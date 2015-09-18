@@ -49,6 +49,16 @@ footer .copyright {color: #aaa; font-size: 10px;}
 .text-warning { color: #FF851B;}
 .text-success { color: #5CB85C;}
 
+span.news {
+    color: white; 
+    background-color: rgb(226, 43, 20); 
+    border-radius: 5px; 
+    margin-right: 5px; 
+    padding: 0 5px 0 5px; 
+    font-weight: bolder; 
+    display: inline-block;
+}
+
 @media (max-width: 568px) {
     .main-column { padding-top: 35px; padding-bottom: 35px; }
     .btn-lg { padding: 6px 12px; font-size: 14px; line-height: 20px; border-radius: 4px;}
