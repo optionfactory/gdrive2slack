@@ -15,7 +15,7 @@ type Request struct {
 	GoogleCode string `json:"g"`
 	SlackCode  string `json:"s"`
 	Channel    string `json:"c"`
-	FolderIds  string `json:"fids"`
+	FolderIds  []string `json:"fids"`
 	FolderName string `json:"fn"`
 }
 
@@ -63,13 +63,6 @@ func handleSubscriptionRequest(env *Environment, renderer render.Render, req *ht
 	if r.Channel == "" {
 		r.Channel = "#general"
 	}
-	var inputFolderIds = strings.Split(r.FolderIds, ",")
-	var folderIds = make([]string, 0, len(inputFolderIds))
-	for _, fid := range inputFolderIds {
-		if len(strings.TrimSpace(fid)) > 0 {
-			folderIds = append(folderIds, fid)
-		}
-	}
 	googleRefreshToken, googleAccessToken, status, err := google.NewAccessToken(env.Configuration.Google, env.HttpClient, r.GoogleCode)
 	if status != google.Ok {
 		renderer.JSON(500, &ErrResponse{err.Error()})
@@ -101,7 +94,7 @@ func handleSubscriptionRequest(env *Environment, renderer render.Render, req *ht
 			googleRefreshToken,
 			gUserInfo,
 			sUserInfo,
-			folderIds,
+			r.FolderIds,
 		},
 		GoogleAccessToken: googleAccessToken,
 	}

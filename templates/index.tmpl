@@ -453,7 +453,8 @@
                 
                 $('#registration-progress').show();
                 animate_show('#registration-panel', 'bounceInDown');
-                var newState = JSON.stringify($.extend({}, state, { fids: folder}));
+                var folders = [folder].filter(function(e) { return e.trim().length });
+                var newState = JSON.stringify($.extend({}, state, { fids: folders }));
                 $.ajax({
                       url: '/',
                       type: 'PUT',
