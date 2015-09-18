@@ -66,7 +66,7 @@ func handleSubscriptionRequest(env *Environment, renderer render.Render, req *ht
 	var inputFolderIds = strings.Split(r.FolderIds, ",")
 	var folderIds = make([]string, 0, len(inputFolderIds))
 	for _, fid := range inputFolderIds {
-		if len(strings.TrimSpace(fid)) == 0 {
+		if len(strings.TrimSpace(fid)) > 0 {
 			folderIds = append(folderIds, fid)
 		}
 	}
