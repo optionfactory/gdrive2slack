@@ -8,7 +8,6 @@ import (
 	"github.com/optionfactory/gdrive2slack/google/userinfo"
 	"github.com/optionfactory/gdrive2slack/slack"
 	"net/http"
-	"strings"
 )
 
 type Request struct {
