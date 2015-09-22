@@ -11,11 +11,11 @@ import (
 )
 
 type Request struct {
-	GoogleCode string `json:"g"`
-	SlackCode  string `json:"s"`
-	Channel    string `json:"c"`
+	GoogleCode string   `json:"g"`
+	SlackCode  string   `json:"s"`
+	Channel    string   `json:"c"`
 	FolderIds  []string `json:"fids"`
-	FolderName string `json:"fn"`
+	FolderName string   `json:"fn"`
 }
 
 type ErrResponse struct {
