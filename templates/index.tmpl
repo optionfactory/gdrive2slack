@@ -388,6 +388,7 @@
               $('#drive-folder-panel').show();
               $('#registration-user').text(state.d);
               $('#registration-success').show();
+              if(ga) ga('send', 'event', 'registration-result', 'registration-success', {nonInteraction: 1 });
               $('#registration-panel').show();
 
               var delay = 1000;
@@ -415,6 +416,7 @@
               $('#slack-channel-panel').show();
               $('#registration-error').text(params.error);
               $('#registration-failure').show();
+              if(ga) ga('send', 'event', 'registration-result', 'registration-failure', {nonInteraction: 1 });
               $('#registration-panel').show();
 
               animate_hide('#google-auth-panel', 'fadeOut', 1000);
@@ -528,10 +530,6 @@
         ['action-auth-google', 'action-auth-slack', 'action-select-channel', 'action-select-folder'].forEach(function(e){
           $("#"+e).on('click', ga.bind(ga, 'send', 'event', 'registration-step', e ));            
         });
-
-        ['registration-success', 'registration-failure'].forEach(function(e){
-          $("#"+e).on('click', ga.bind(ga, 'send', 'event', 'registration-result', e, {nonInteraction: 1 }));            
-        })
       </script>
       {{end}}
     </body>
