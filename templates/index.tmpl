@@ -447,6 +447,9 @@
               });
 
               $('#action-select-folder').click(function(){
+                if(ga){
+                   ga('send', 'event', 'registration-step', 'action-select-folder')
+                }                
                 var folder = $('#drive-folder-id').val();
                 var folderName = $('#drive-folder').val() || "/";
                 $('#selected-folder').text(folderName);
@@ -464,8 +467,7 @@
                       contentType: 'application/json',
                       data: newState
                   }).done(function(response){
-                      var registeredState = JSON.stringify($.extend({}, state, {d: response.user.givenName, f: response.channelFound, fns: [folderName] }));
-                      registration_success(registeredState);
+                      registration_success(JSON.stringify($.extend({}, state, {d: response.user.givenName, f: response.channelFound, fns: [folderName] })));
                   }).fail(function(response){
                       var error = response && response.responseJSON && response.responseJSON.error ? response.responseJSON.error : "unknown";
                       registration_failure(newState, error);
@@ -484,9 +486,17 @@
               $('#slack-channel-form').show();
               animate_show('#slack-channel-panel', 'bounceInDown');
               $('#action-select-channel').click(function(){
-                var channel = $('#slack-channel').val() || "#general";
-                var newState = JSON.stringify($.extend({}, state, { s: params.code, c: channel}));
-                document.location.href="/"+"?state="+encodeURIComponent(newState);
+                function handler(){
+                  document.location.href="/"+"?state="+encodeURIComponent(JSON.stringify($.extend({}, state, { s: params.code, c: $('#slack-channel').val() || "#general"})));
+                }
+                if(ga){
+                   ga('send', 'event', 'registration-step', 'action-select-channel', {
+                       hitCallback: handler
+                   })
+                }else{
+                    handler();
+                }                
+                return false;
               });
               return;
             }
@@ -498,8 +508,16 @@
               $('#slack-auth-request').show();
               animate_show('#slack-auth-panel', 'bounceInDown');
               $('#action-auth-slack').click(function(){
-                var newState = JSON.stringify($.extend({}, state, { g: params.code}));
-                slack_oauth(newState);
+                function handler(){
+                  slack_oauth(JSON.stringify($.extend({}, state, { g: params.code})));
+                }
+                if(ga){
+                   ga('send', 'event', 'registration-step', 'action-auth-slack', {
+                       hitCallback: handler
+                   })
+                }else{
+                    handler();
+                }
                 return false;
               });
               return;
@@ -507,8 +525,16 @@
 
             // no step completed, initial layout
             $('#action-auth-google').click(function(){
-                var newState = JSON.stringify(state);
-                google_oauth(newState);
+                function handler(){
+                    google_oauth(JSON.stringify(state));                                          
+                }
+                if(ga){
+                   ga('send', 'event', 'registration-step', 'action-auth-google', {
+                       hitCallback: handler
+                   })
+                }else{
+                    handler();
+                }
                 return false;
             });
             $('#google-auth-request').show();
@@ -526,10 +552,6 @@
         ga('require', 'linkid', 'linkid.js');
         ga('require', 'displayfeatures');
         ga('send', 'pageview');
-
-        ['action-auth-google', 'action-auth-slack', 'action-select-channel', 'action-select-folder'].forEach(function(e){
-          $("#"+e).on('click', ga.bind(ga, 'send', 'event', 'registration-step', e ));            
-        });
       </script>
       {{end}}
     </body>
