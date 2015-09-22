@@ -524,6 +524,14 @@
         ga('require', 'linkid', 'linkid.js');
         ga('require', 'displayfeatures');
         ga('send', 'pageview');
+
+        ['action-auth-google', 'action-auth-slack', 'action-select-channel', 'action-select-folder'].forEach(function(e){
+          $("#"+e).on('click', ga.bind(ga, 'send', 'event', 'registration-step', e ));            
+        });
+
+        ['registration-success', 'registration-failure'].forEach(function(e){
+          $("#"+e).on('click', ga.bind(ga, 'send', 'event', 'registration-result', e, {nonInteraction: 1 }));            
+        })
       </script>
       {{end}}
     </body>
