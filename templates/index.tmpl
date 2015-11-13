@@ -337,7 +337,7 @@
         function slack_oauth(state){
             document.location.href= "https://slack.com/oauth/authorize"
                 +"?state=" + encodeURIComponent(state)
-                +"&scope=identify,post"
+                +"&scope=identify,chat:write:bot"
                 +"&client_id=" + encodeURIComponent("{{.Configuration.Slack.ClientId}}")
                 +"&redirect_uri=" + encodeURIComponent("{{.Configuration.Slack.RedirectUri}}");
         }          
