@@ -38,9 +38,13 @@ func EventLoop(env *Environment) {
 				go mailchimpRegistrationTask(env, subscription)
 			}
 		case email := <-env.DiscardChannel:
-			subscription := subscriptions.Remove(email)
-			env.Logger.Info("-subscription: %s '%s' '%s'", subscription.GoogleUserInfo.Email, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
-			go mailchimpDeregistrationTask(env, subscription)
+			subscription, message, removed := subscriptions.HandleFailure(email)
+			if removed {
+				env.Logger.Info("-subscription: %s %s '%s' '%s'", message, subscription.GoogleUserInfo.Email, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
+				go mailchimpDeregistrationTask(env, subscription)
+			} else {
+				env.Logger.Info("!subscription: %s %s '%s' '%s'", message, subscription.GoogleUserInfo.Email, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
+			}
 		case s := <-env.SignalsChannel:
 			env.Logger.Info("Exiting: got signal %v", s)
 			os.Exit(0)
