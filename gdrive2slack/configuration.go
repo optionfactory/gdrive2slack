@@ -14,6 +14,7 @@ import (
 
 type Configuration struct {
 	BindAddress      string                     `json:"bindAddress"`
+	Workers          int                        `json:"workers"`
 	GoogleTrackingId string                     `json:"googleTrackingId"`
 	Google           *google.OauthConfiguration `json:"google"`
 	Slack            *slack.OauthConfiguration  `json:"slack"`

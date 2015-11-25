@@ -2,6 +2,7 @@ package gdrive2slack
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/optionfactory/gdrive2slack/google/drive"
 	"github.com/optionfactory/gdrive2slack/google/userinfo"
 	"github.com/optionfactory/gdrive2slack/slack"
@@ -21,6 +22,7 @@ type Subscription struct {
 type UserState struct {
 	Gdrive            *drive.State
 	GoogleAccessToken string
+	FailingSince      *time.Time
 }
 
 type SubscriptionAndAccessToken struct {
@@ -53,6 +55,7 @@ func LoadSubscriptions(filename string) (*Subscriptions, error) {
 		subscriptions.States[k] = &UserState{
 			Gdrive:            drive.NewState(),
 			GoogleAccessToken: "",
+			FailingSince:      nil,
 		}
 		// handle migration from versions prior to folder filtering
 		if sub.GoogleInterestingFolderIds == nil {
@@ -89,12 +92,23 @@ func (subscriptions *Subscriptions) Add(subscription *Subscription, googleAccess
 	subscriptions.save()
 }
 
-func (subscriptions *Subscriptions) Remove(email string) *Subscription {
+func (subscriptions *Subscriptions) HandleFailure(email string) (*Subscription, string, bool) {
 	s := subscriptions.Info[email]
-	delete(subscriptions.States, email)
-	delete(subscriptions.Info, email)
-	subscriptions.save()
-	return s
+	state := subscriptions.States[email]
+	now := time.Now()
+	threshold := now.Add(-24 * time.Hour)
+	if state.FailingSince == nil {
+		state.FailingSince = &now
+		return s, "new_failure", false
+	}
+	if state.FailingSince.Before(threshold) {
+		delete(subscriptions.States, email)
+		delete(subscriptions.Info, email)
+		subscriptions.save()
+		return s, fmt.Sprintf("over_failure_threshold_since@%v", state.FailingSince.Unix()), true
+	}
+	return s, fmt.Sprintf("still_failing_since@%v", state.FailingSince.Unix()), false
+
 }
 
 func (subscriptions *Subscriptions) Contains(email string) bool {

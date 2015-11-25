@@ -6,7 +6,6 @@ import (
 	"github.com/optionfactory/gdrive2slack/mailchimp"
 	"github.com/optionfactory/gdrive2slack/slack"
 	"os"
-	"sync"
 	"time"
 )
 
@@ -32,45 +31,69 @@ func EventLoop(env *Environment) {
 			alreadySubscribed := subscriptions.Contains(subscription.GoogleUserInfo.Email)
 			subscriptions.Add(subscription, subscriptionAndAccessToken.GoogleAccessToken)
 			if alreadySubscribed {
-				env.Logger.Info("*subscription: %s '%s' '%s'", subscription.GoogleUserInfo.Email, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
+				env.Logger.Info("[%s/%s] *subscription: '%s' '%s'", subscription.GoogleUserInfo.Email, subscription.SlackUserInfo.User, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
 			} else {
-				env.Logger.Info("+subscription: %s '%s' '%s'", subscription.GoogleUserInfo.Email, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
+				env.Logger.Info("[%s/%s] +subscription: '%s' '%s'", subscription.GoogleUserInfo.Email, subscription.SlackUserInfo.User, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
 				go mailchimpRegistrationTask(env, subscription)
 			}
 		case email := <-env.DiscardChannel:
 			subscription, message, removed := subscriptions.HandleFailure(email)
 			if removed {
-				env.Logger.Info("-subscription: %s %s '%s' '%s'", message, subscription.GoogleUserInfo.Email, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
+				env.Logger.Info("[%s/%s] -subscription: '%s' '%s' %s", email, subscription.SlackUserInfo.User, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName, message)
 				go mailchimpDeregistrationTask(env, subscription)
 			} else {
-				env.Logger.Info("!subscription: %s %s '%s' '%s'", message, subscription.GoogleUserInfo.Email, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
+				env.Logger.Info("[%s/%s] !subscription: '%s' '%s' %s", email, subscription.SlackUserInfo.User, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName, message)
 			}
 		case s := <-env.SignalsChannel:
 			env.Logger.Info("Exiting: got signal %v", s)
 			os.Exit(0)
 		case <-time.After(waitFor):
 			lastLoopTime = time.Now()
-			var waitGroup sync.WaitGroup
-			for k, subscription := range subscriptions.Info {
-				waitGroup.Add(1)
-				go serveUserTask(env, &waitGroup, subscription, subscriptions.States[k])
+
+			subsLen := len(subscriptions.Info)
+			requests := make(chan *SubscriptionAndUserState, subsLen)
+			responses := make(chan bool, subsLen)
+
+			for w := 0; w != env.Configuration.Workers; w++ {
+				go Worker(w, env, requests, responses)
 			}
-			waitGroup.Wait()
-			env.Logger.Info("Served %d clients", len(subscriptions.Info))
+
+			for k, subscription := range subscriptions.Info {
+				requests <- &SubscriptionAndUserState{
+					subscription,
+					subscriptions.States[k],
+				}
+			}
+			close(requests)
+
+			for r := 0; r != subsLen; r++ {
+				<-responses
+			}
+			env.Logger.Info("Served %d clients", subsLen)
 		}
 	}
 }
 
-func serveUserTask(env *Environment, waitGroup *sync.WaitGroup, subscription *Subscription, userState *UserState) {
+type SubscriptionAndUserState struct {
+	Subscription *Subscription
+	UserState    *UserState
+}
+
+func Worker(id int, env *Environment, subAndStates <-chan *SubscriptionAndUserState, results chan<- bool) {
+	for subAndState := range subAndStates {
+		serveUserTask(env, subAndState.Subscription, subAndState.UserState)
+		results <- true
+	}
+}
+
+func serveUserTask(env *Environment, subscription *Subscription, userState *UserState) {
 	email := subscription.GoogleUserInfo.Email
 	slackUser := subscription.SlackUserInfo.User
 	defer func() {
 		if r := recover(); r != nil {
-			env.Logger.Error("[%s/%s] removing handler. reason: %v", email, slackUser, r)
+			env.Logger.Warning("[%s/%s] recovering. reason: %v", email, slackUser, r)
 			env.DiscardChannel <- email
-
 		}
-		waitGroup.Done()
 	}()
 	var err error
 	if userState.Gdrive.LargestChangeId == 0 {
