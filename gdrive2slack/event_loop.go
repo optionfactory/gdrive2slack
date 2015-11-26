@@ -36,14 +36,6 @@ func EventLoop(env *Environment) {
 				env.Logger.Info("[%s/%s] +subscription: '%s' '%s'", subscription.GoogleUserInfo.Email, subscription.SlackUserInfo.User, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName)
 				go mailchimpRegistrationTask(env, subscription)
 			}
-		case email := <-env.DiscardChannel:
-			subscription, message, removed := subscriptions.HandleFailure(email)
-			if removed {
-				env.Logger.Info("[%s/%s] -subscription: '%s' '%s' %s", email, subscription.SlackUserInfo.User, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName, message)
-				go mailchimpDeregistrationTask(env, subscription)
-			} else {
-				env.Logger.Info("[%s/%s] !subscription: '%s' '%s' %s", email, subscription.SlackUserInfo.User, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName, message)
-			}
 		case s := <-env.SignalsChannel:
 			env.Logger.Info("Exiting: got signal %v", s)
 			os.Exit(0)
@@ -51,48 +43,70 @@ func EventLoop(env *Environment) {
 			lastLoopTime = time.Now()
 
 			subsLen := len(subscriptions.Info)
-			requests := make(chan *SubscriptionAndUserState, subsLen)
-			responses := make(chan bool, subsLen)
+			requests := make(chan *subscriptionAndUserState, subsLen)
+			responses := make(chan response, subsLen)
 
 			for w := 0; w != env.Configuration.Workers; w++ {
-				go Worker(w, env, requests, responses)
+				go worker(w, env, requests, responses)
 			}
 
 			for k, subscription := range subscriptions.Info {
-				requests <- &SubscriptionAndUserState{
+				requests <- &subscriptionAndUserState{
 					subscription,
 					subscriptions.States[k],
 				}
 			}
 			close(requests)
-
+			failures := 0
+			removals := 0
 			for r := 0; r != subsLen; r++ {
-				<-responses
+				response := <-responses
+				if response.Success {
+					subscriptions.HandleSuccess(response.Email)
+				} else {
+					failures++
+					subscription, message, removed := subscriptions.HandleFailure(response.Email)
+					if removed {
+						removals++
+						env.Logger.Info("[%s/%s] -subscription: '%s' '%s' %s", response.Email, subscription.SlackUserInfo.User, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName, message)
+						go mailchimpDeregistrationTask(env, subscription)
+					} else {
+						env.Logger.Info("[%s/%s] !subscription: '%s' '%s' %s", response.Email, subscription.SlackUserInfo.User, subscription.GoogleUserInfo.GivenName, subscription.GoogleUserInfo.FamilyName, message)
+					}
+				}
 			}
-			env.Logger.Info("Served %d clients", subsLen)
+			env.Logger.Info("Served %d clients with %d failures and %d removals", subsLen, failures, removals)
 		}
 	}
 }
 
-type SubscriptionAndUserState struct {
+type subscriptionAndUserState struct {
 	Subscription *Subscription
 	UserState    *UserState
 }
 
-func Worker(id int, env *Environment, subAndStates <-chan *SubscriptionAndUserState, results chan<- bool) {
+type response struct {
+	Email   string
+	Success bool
+}
+
+func worker(id int, env *Environment, subAndStates <-chan *subscriptionAndUserState, results chan<- response) {
 	for subAndState := range subAndStates {
-		serveUserTask(env, subAndState.Subscription, subAndState.UserState)
-		results <- true
+		results <- serveUserTask(env, subAndState.Subscription, subAndState.UserState)
 	}
 }
 
-func serveUserTask(env *Environment, subscription *Subscription, userState *UserState) {
+func serveUserTask(env *Environment, subscription *Subscription, userState *UserState) response {
 	email := subscription.GoogleUserInfo.Email
 	slackUser := subscription.SlackUserInfo.User
+	result := response{
+		Email:   email,
+		Success: true,
+	}
 	defer func() {
 		if r := recover(); r != nil {
 			env.Logger.Warning("[%s/%s] recovering. reason: %v", email, slackUser, r)
-			env.DiscardChannel <- email
+			result.Success = false
 		}
 	}()
 	var err error
@@ -104,7 +118,7 @@ func serveUserTask(env *Environment, subscription *Subscription, userState *User
 		if err != nil {
 			env.Logger.Warning("[%s/%s] %s", email, slackUser, err)
 		}
-		return
+		return result
 	}
 
 	userState.GoogleAccessToken, err = google.DoWithAccessToken(env.Configuration.Google, env.HttpClient, subscription.GoogleRefreshToken, userState.GoogleAccessToken, func(at string) (google.StatusCode, error) {
@@ -112,20 +126,20 @@ func serveUserTask(env *Environment, subscription *Subscription, userState *User
 	})
 	if err != nil {
 		env.Logger.Warning("[%s/%s] %s", email, slackUser, err)
-		return
+		return result
 	}
 
 	if len(userState.Gdrive.ChangeSet) == 0 {
-		return
+		return result
 	}
 	statusCode, err, folders := drive.FetchFolders(env.HttpClient, userState.GoogleAccessToken)
 	if statusCode != google.Ok {
 		env.Logger.Warning("[%s/%s] while fetching folders: %s", email, slackUser, err)
-		return
+		return result
 	}
 	message := CreateSlackMessage(subscription, userState, folders, env.Version)
 	if len(message.Attachments) == 0 {
-		return
+		return result
 	}
 
 	env.Logger.Info("[%s/%s] @%v %v changes", email, slackUser, userState.Gdrive.LargestChangeId, len(message.Attachments))
@@ -146,6 +160,7 @@ func serveUserTask(env *Environment, subscription *Subscription, userState *User
 			env.Logger.Warning("[%s/%s] %s", email, slackUser, err)
 		}
 	}
+	return result
 }
 
 func mailchimpRegistrationTask(env *Environment, subscription *Subscription) {

@@ -111,6 +111,10 @@ func (subscriptions *Subscriptions) HandleFailure(email string) (*Subscription, 
 
 }
 
+func (subscriptions *Subscriptions) HandleSuccess(email string) {
+	subscriptions.States[email].FailingSince = nil
+}
+
 func (subscriptions *Subscriptions) Contains(email string) bool {
 	_, ok := subscriptions.Info[email]
 	return ok
