@@ -90,16 +90,16 @@ type response struct {
 	Success bool
 }
 
-func worker(id int, env *Environment, subAndStates <-chan *subscriptionAndUserState, results chan<- response) {
+func worker(id int, env *Environment, subAndStates <-chan *subscriptionAndUserState, responses chan<- response) {
 	for subAndState := range subAndStates {
-		results <- serveUserTask(env, subAndState.Subscription, subAndState.UserState)
+		responses <- serveUserTask(env, subAndState.Subscription, subAndState.UserState)
 	}
 }
 
-func serveUserTask(env *Environment, subscription *Subscription, userState *UserState) response {
+func serveUserTask(env *Environment, subscription *Subscription, userState *UserState) (result response) {
 	email := subscription.GoogleUserInfo.Email
 	slackUser := subscription.SlackUserInfo.User
-	result := response{
+	result = response{
 		Email:   email,
 		Success: true,
 	}
@@ -118,7 +118,7 @@ func serveUserTask(env *Environment, subscription *Subscription, userState *User
 		if err != nil {
 			env.Logger.Warning("[%s/%s] %s", email, slackUser, err)
 		}
-		return result
+		return
 	}
 
 	userState.GoogleAccessToken, err = google.DoWithAccessToken(env.Configuration.Google, env.HttpClient, subscription.GoogleRefreshToken, userState.GoogleAccessToken, func(at string) (google.StatusCode, error) {
@@ -126,20 +126,20 @@ func serveUserTask(env *Environment, subscription *Subscription, userState *User
 	})
 	if err != nil {
 		env.Logger.Warning("[%s/%s] %s", email, slackUser, err)
-		return result
+		return
 	}
 
 	if len(userState.Gdrive.ChangeSet) == 0 {
-		return result
+		return
 	}
 	statusCode, err, folders := drive.FetchFolders(env.HttpClient, userState.GoogleAccessToken)
 	if statusCode != google.Ok {
 		env.Logger.Warning("[%s/%s] while fetching folders: %s", email, slackUser, err)
-		return result
+		return
 	}
 	message := CreateSlackMessage(subscription, userState, folders, env.Version)
 	if len(message.Attachments) == 0 {
-		return result
+		return
 	}
 
 	env.Logger.Info("[%s/%s] @%v %v changes", email, slackUser, userState.Gdrive.LargestChangeId, len(message.Attachments))
@@ -160,7 +160,7 @@ func serveUserTask(env *Environment, subscription *Subscription, userState *User
 			env.Logger.Warning("[%s/%s] %s", email, slackUser, err)
 		}
 	}
-	return result
+	return
 }
 
 func mailchimpRegistrationTask(env *Environment, subscription *Subscription) {
