@@ -14,7 +14,6 @@ Users can authorize their own accounts by using the web interface with just a fe
 ## Your options:
 
 #### Learn more:
-* [User authorization workflow](https://github.com/optionfactory/gdrive2slack/wiki#user-authorization-workflow)
 * [Required permissions (oauth)](https://github.com/optionfactory/gdrive2slack/wiki#required-permissions-\(oauth\))
 
 #### Use our hosted service
