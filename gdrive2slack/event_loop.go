@@ -20,7 +20,7 @@ func EventLoop(env *Environment) {
 	waitFor := time.Duration(0)
 	for {
 		if !lastLoopTime.IsZero() {
-			waitFor = time.Duration(101)*time.Second - time.Now().Sub(lastLoopTime)
+			waitFor = time.Duration(env.Configuration.Interval)*time.Second - time.Now().Sub(lastLoopTime)
 		}
 		if waitFor < 0 {
 			waitFor = time.Duration(1) * time.Second
