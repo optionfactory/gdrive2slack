@@ -389,7 +389,7 @@
               $('#drive-folder-panel').show();
               $('#registration-user').text(state.d);
               $('#registration-success').show();
-              if(ga) ga('send', 'event', 'registration-result', 'registration-success', {nonInteraction: 1 });
+              if(window.ga) ga('send', 'event', 'registration-result', 'registration-success', {nonInteraction: 1 });
               $('#registration-panel').show();
 
               var delay = 1000;
@@ -417,7 +417,7 @@
               $('#slack-channel-panel').show();
               $('#registration-error').text(params.error);
               $('#registration-failure').show();
-              if(ga) ga('send', 'event', 'registration-result', 'registration-failure', {nonInteraction: 1 });
+              if(window.ga) ga('send', 'event', 'registration-result', 'registration-failure', {nonInteraction: 1 });
               $('#registration-panel').show();
 
               animate_hide('#google-auth-panel', 'fadeOut', 1000);
@@ -448,7 +448,7 @@
               });
 
               $('#action-select-folder').click(function(){
-                if(ga){
+                if(window.ga){
                    ga('send', 'event', 'registration-step', 'action-select-folder')
                 }                
                 var folder = $('#drive-folder-id').val();
@@ -490,7 +490,7 @@
                 function handler(){
                   document.location.href="/"+"?state="+encodeURIComponent(JSON.stringify($.extend({}, state, { s: params.code, c: $('#slack-channel').val() || "#general"})));
                 }
-                if(ga){
+                if(window.ga){
                    ga('send', 'event', 'registration-step', 'action-select-channel', {
                        hitCallback: handler
                    })
@@ -512,7 +512,7 @@
                 function handler(){
                   slack_oauth(JSON.stringify($.extend({}, state, { g: params.code})));
                 }
-                if(ga){
+                if(window.ga){
                    ga('send', 'event', 'registration-step', 'action-auth-slack', {
                        hitCallback: handler
                    })
@@ -529,7 +529,7 @@
                 function handler(){
                     google_oauth(JSON.stringify(state));                                          
                 }
-                if(ga){
+                if(window.ga){
                    ga('send', 'event', 'registration-step', 'action-auth-google', {
                        hitCallback: handler
                    })
