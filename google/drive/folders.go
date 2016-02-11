@@ -80,13 +80,16 @@ func index(folders []*folder) *Folders {
 	}
 }
 
-func FetchFolders(client *http.Client, accessToken string) (google.StatusCode, error, *Folders) {
+func fetchFoldersPage(client *http.Client, accessToken string, nextPageToken string) (google.StatusCode, error, *folders) {
 	u, _ := url.Parse("https://www.googleapis.com/drive/v2/files")
 	q := u.Query()
 	q.Set("corpus", "DOMAIN")
 	q.Set("q", "mimeType = 'application/vnd.google-apps.folder'")
 	q.Set("fields", "items(id,parents(id),title),nextPageToken")
 	q.Set("maxResults", "1000")
+	if nextPageToken != "" {
+		q.Set("pageToken", nextPageToken)
+	}
 	u.RawQuery = q.Encode()
 	req, _ := http.NewRequest("GET", u.String(), nil)
 	req.Header.Add("Authorization", "Bearer "+accessToken)
@@ -108,7 +111,23 @@ func FetchFolders(client *http.Client, accessToken string) (google.StatusCode, e
 		}
 		return google.ApiError, errors.New(folders.Error.Message), nil
 	}
-	return google.Ok, nil, index(folders.Items)
+	return google.Ok, nil, folders
+}
+
+func FetchFolders(client *http.Client, accessToken string) (google.StatusCode, error, *Folders) {
+	items := make([]*folder, 0)
+	nextPageToken := ""
+	for {
+		statusCode, err, folders := fetchFoldersPage(client, accessToken, nextPageToken)
+		if statusCode != google.Ok {
+			return statusCode, err, nil
+		}
+		items = append(items, folders.Items...)
+		if folders.NextPageToken == "" {
+			return google.Ok, nil, index(items)
+		}
+		nextPageToken = folders.NextPageToken
+	}
 }
 
 func (self *Folders) List() []*Folder {
