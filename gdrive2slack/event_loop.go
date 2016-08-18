@@ -43,6 +43,7 @@ func EventLoop(env *Environment) {
 			lastLoopTime = time.Now()
 
 			subsLen := len(subscriptions.Info)
+			env.Logger.Info("Starting to serve %d clients", subsLen)
 			requests := make(chan *subscriptionAndUserState, subsLen)
 			responses := make(chan response, subsLen)
 
